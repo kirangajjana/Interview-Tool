@@ -4,6 +4,10 @@ from typing import List
 class ScreeningResult(BaseModel):
     qualified: bool = Field(description="Set to True if the candidate has ANY software, coding, AI, ML, data, or technical knowledge. Set to False ONLY if the resume has absolutely zero relevance to technology/software.")
     reason: str = Field(description="Detailed explanation for the qualification or disqualification decision.")
+    match_score: int = Field(description="Score between 0 and 100 representing how well the candidate's resume matches the target job description.")
+    matched_skills: List[str] = Field(description="List of core technical skills present in the resume that match the job requirements.")
+    missing_skills: List[str] = Field(description="List of technical skills/requirements mentioned in the job description that are missing from the resume.")
+    red_flags: List[str] = Field(description="List of concerns or red flags (e.g. short job duration, lack of core experience, gaps) identified from the resume.")
 
 class MCQItem(BaseModel):
     question: str = Field(description="The technical question based on the candidate's skills and the applied role.")

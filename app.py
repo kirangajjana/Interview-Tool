@@ -1,5 +1,7 @@
 import streamlit as st
 import time
+import json
+import os
 from src.config import Config
 from src.parser import ResumeParser
 from src.agents.screening_agent import ScreeningAgent
@@ -26,26 +28,54 @@ st.markdown("""
     }
     
     .stApp {
-        background-color: #fffbf7;
+        background-color: #fffbf8;
         color: #1e293b;
+    }
+    
+    /* Entrance Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translate3d(0, 20px, 0);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    @keyframes pulseGlow {
+        0% {
+            box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.2);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(234, 88, 12, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(234, 88, 12, 0);
+        }
     }
     
     /* Header Gradient */
     .recruit-header {
-        font-size: 2.8rem;
+        font-size: 3rem;
         font-weight: 700;
         background: linear-gradient(135deg, #f97316, #ea580c);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: center;
         margin-bottom: 5px;
+        letter-spacing: -0.5px;
+        animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
     
     .recruit-sub {
-        font-size: 1.1rem;
+        font-size: 1.15rem;
         color: #475569;
         text-align: center;
-        margin-bottom: 30px;
+        margin-bottom: 35px;
+        font-weight: 400;
+        animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
     
     /* Card Glassmorphism in Warm Light Theme */
@@ -53,26 +83,39 @@ st.markdown("""
         background: #ffffff;
         border: 1px solid #ffedd5;
         border-radius: 16px;
-        padding: 25px;
-        box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.05), 0 4px 6px -4px rgba(249, 115, 22, 0.05);
-        margin-bottom: 25px;
+        padding: 30px;
+        box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.05), 0 8px 10px -6px rgba(249, 115, 22, 0.05);
+        margin-bottom: 30px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    
+    .glass-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 30px -10px rgba(249, 115, 22, 0.08), 0 10px 15px -8px rgba(249, 115, 22, 0.08);
     }
     
     .stage-title {
         color: #1e293b;
-        font-size: 1.4rem;
+        font-size: 1.45rem;
         font-weight: 600;
-        border-left: 4px solid #f97316;
-        padding-left: 10px;
-        margin-bottom: 20px;
+        border-left: 5px solid #f97316;
+        padding-left: 12px;
+        margin-bottom: 25px;
     }
     
     /* Global Form & Widget Light Customizations */
     div[data-baseweb="input"], div[data-baseweb="select"], textarea {
         background-color: #ffffff !important;
         color: #1e293b !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 8px !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within, textarea:focus {
+        border-color: #ea580c !important;
+        box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15) !important;
     }
     
     div[data-baseweb="input"] input, textarea {
@@ -82,7 +125,9 @@ st.markdown("""
     /* Labels */
     label, [data-testid="stWidgetLabel"] {
         color: #334155 !important;
-        font-weight: 500 !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        margin-bottom: 8px !important;
     }
     
     /* Placeholders */
@@ -93,9 +138,14 @@ st.markdown("""
     /* File Uploader styling */
     div[data-testid="stFileUploader"] {
         background-color: #fffdfa !important;
-        border: 1px dashed #fdba74 !important;
-        border-radius: 12px;
-        padding: 10px;
+        border: 2px dashed #fdba74 !important;
+        border-radius: 14px;
+        padding: 15px;
+        transition: border-color 0.3s ease;
+    }
+    
+    div[data-testid="stFileUploader"]:hover {
+        border-color: #ea580c !important;
     }
     
     div[data-testid="stFileUploader"] section {
@@ -105,81 +155,95 @@ st.markdown("""
     /* Selectbox Dropdown styling */
     div[role="listbox"] {
         background-color: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 10px;
     }
     
     div[role="option"] {
         color: #1e293b !important;
         background-color: #ffffff !important;
+        padding: 10px 15px !important;
     }
     
     div[role="option"]:hover, li[role="option"]:hover {
         background-color: #ffedd5 !important;
+        color: #ea580c !important;
     }
     
     /* Read-Only JD Container */
     .jd-container {
         background-color: #fffaf4;
         border: 1px solid #ffedd5;
-        border-radius: 8px;
-        padding: 15px;
+        border-radius: 10px;
+        padding: 20px;
         font-size: 0.95rem;
         color: #475569;
         line-height: 1.6;
         margin-top: 5px;
-        margin-bottom: 20px;
-        max-height: 200px;
+        margin-bottom: 25px;
+        max-height: 220px;
         overflow-y: auto;
         white-space: pre-wrap;
     }
     
-    /* Chat styling */
-    .chat-bubble-user {
-        background: linear-gradient(135deg, #f97316, #ea580c);
-        color: white;
-        border-radius: 15px 15px 0px 15px;
-        padding: 12px 18px;
-        margin: 5px 0;
-        max-width: 80%;
-        float: right;
-        clear: both;
-        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
-    }
-    
-    .chat-bubble-agent {
-        background-color: #f1f5f9;
-        color: #1e293b;
-        border-radius: 15px 15px 15px 0px;
-        padding: 12px 18px;
-        margin: 5px 0;
-        max-width: 80%;
-        float: left;
-        clear: both;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    }
-    
-    /* Chat Forms */
-    form[data-testid="stForm"] {
-        background: #fffdfa;
-        border: 1px solid #ffedd5;
+    /* Tabs Overrides */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: #f8fafc;
+        padding: 6px;
         border-radius: 12px;
-        padding: 20px;
-        margin-top: 15px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 20px;
     }
     
-    /* MCQ Radio Options */
-    div[data-testid="stRadio"] label {
-        color: #475569 !important;
+    .stTabs [data-baseweb="tab"] {
+        background-color: transparent;
+        border: none;
+        color: #64748b;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        color: #ea580c;
+        background-color: #fff7ed;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        color: #ea580c !important;
+        background-color: #ffffff !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
     
     /* Navigation Pills styling */
-    div[data-testid="stRadio"] > div {
-        background-color: #ffffff;
-        border: 1px solid #ffedd5;
+    div[data-testid="stRadio"] > div[role="radiogroup"] {
+        background-color: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
         border-radius: 30px;
-        padding: 5px 15px;
-        box-shadow: 0 2px 5px rgba(249, 115, 22, 0.03);
+        padding: 6px 12px !important;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 25px;
+    }
+    
+    div[data-testid="stRadio"] label[data-baseweb="radio"] {
+        background-color: transparent;
+        border: none;
+        padding: 6px 16px;
+        border-radius: 20px;
+        color: #64748b;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    div[data-testid="stRadio"] label[data-baseweb="radio"]:hover {
+        color: #ea580c;
+        background-color: #fff7ed;
     }
     
     /* Custom buttons */
@@ -187,60 +251,176 @@ st.markdown("""
         background: linear-gradient(135deg, #f97316, #ea580c);
         color: white;
         border: none;
-        border-radius: 8px;
-        padding: 10px 24px;
+        border-radius: 10px;
+        padding: 12px 28px;
         font-weight: 600;
         transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(234, 88, 12, 0.15);
     }
     
     .stButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(249, 115, 22, 0.3);
+        box-shadow: 0 10px 20px rgba(234, 88, 12, 0.3);
+        background: linear-gradient(135deg, #ea580c, #c2410c);
+        color: white !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Predefined job descriptions to make testing easy
-PREDEFINED_JDS = {
-    "Senior Backend Developer": (
-        "We are looking for a Senior Backend Developer with 5+ years of experience in Python. "
-        "Key requirements: Expertise in Django/FastAPI, building scalable REST and gRPC APIs. "
-        "Experience with SQL (Postgres) and NoSQL databases, Redis, and message brokers like RabbitMQ. "
-        "Familiarity with Docker, AWS cloud services, and CI/CD pipelines. Strong understanding of SOLID principles "
-        "and clean architecture."
-    ),
-    "Machine Learning Engineer": (
-        "Looking for an ML Engineer with 3+ years of experience. Strong proficiency in Python, PyTorch/TensorFlow, "
-        "and Scikit-Learn. Experience in building NLP pipelines, text classification, or LLM-based applications. "
-        "Familiarity with Vector databases (Pinecone, Chroma) and LangChain/LlamaIndex. Experience deploying "
-        "ML models in production environments using FastAPI and Docker."
-    ),
-    "Full Stack Developer": (
-        "Seeking a Full Stack Developer. Strong skills in Python (FastAPI/Flask) for backend services. "
-        "Proficiency in modern frontend frameworks (React or Vue.js), HTML5, CSS3, and JavaScript/TypeScript. "
-        "Experience with state management, clean responsive designs, and SQL database management. "
-        "Knowledge of cloud platforms (AWS/GCP/Azure) and automated testing frameworks is a big plus."
-    ),
-    "Data Scientist": (
-        "We are seeking a Data Scientist to join our team. Responsibilities include building machine learning models, "
-        "analyzing large complex datasets, and presenting actionable insights. Required skills: Python, SQL, "
-        "scikit-learn, pandas, numpy, and experience with data visualization tools (Matplotlib, Tableau). "
-        "Familiarity with deep learning frameworks is a plus."
-    ),
-    "Data Engineer": (
-        "We are seeking a Data Engineer to design, deploy, and maintain robust data pipelines. "
-        "Key skills include Python, SQL, ETL pipelines, warehouse platforms like Snowflake or BigQuery, "
-        "and distributed processing frameworks like Apache Spark. "
-        "Experience orchestrating workflows using Apache Airflow is highly preferred."
-    ),
-    "Software Engineer": (
-        "We are looking for a Software Engineer to design, develop, and maintain core software applications. "
-        "Key requirements: Proficiency in Python, object-oriented programming, standard design patterns, "
-        "writing unit tests, and version control using Git. "
-        "Strong understanding of software development lifecycles and clean code practices."
-    ),
-    "Custom / Write your own": ""
-}
+JOBS_FILE = "src/jobs.json"
+
+def load_jobs():
+    if not os.path.exists(JOBS_FILE):
+        return {}
+    try:
+        with open(JOBS_FILE, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        st.error(f"Error loading jobs from JSON: {e}")
+        return {}
+
+def save_jobs(jobs):
+    try:
+        with open(JOBS_FILE, "w") as f:
+            json.dump(jobs, f, indent=2)
+        return True
+    except Exception as e:
+        st.error(f"Error saving jobs: {e}")
+        return False
+
+CANDIDATES_FILE = "src/candidates.json"
+
+def load_candidates():
+    if not os.path.exists(CANDIDATES_FILE):
+        return []
+    try:
+        with open(CANDIDATES_FILE, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        return []
+
+def log_candidate_state(status_override=None):
+    name = st.session_state.get("candidate_name", "").strip()
+    email = st.session_state.get("candidate_email", "").strip()
+    if not name or not email:
+        return
+        
+    phone = st.session_state.get("candidate_phone", "")
+    role = st.session_state.get("job_role", "")
+    exp = st.session_state.get("experience", "")
+    stage = st.session_state.get("stage", "")
+    
+    status = status_override or stage
+    # Human-friendly stage name mapping
+    friendly_status = status
+    if status == "upload":
+        friendly_status = "Profile Uploaded"
+    elif status == "screening_passed":
+        friendly_status = "Cleared Screening"
+    elif status == "screening_failed":
+        friendly_status = "Disqualified in Screening"
+    elif status == "mcq":
+        friendly_status = "Taking Technical MCQ"
+    elif status == "mcq_passed_screen":
+        friendly_status = "Passed MCQ"
+    elif status == "mcq_failed_screen":
+        friendly_status = "Failed MCQ"
+    elif status == "interview":
+        friendly_status = "Technical Interview Round"
+    elif status == "final_evaluation":
+        friendly_status = "Interview Finished"
+    
+    screening_res = st.session_state.get("screening_result")
+    screening_reason = screening_res.reason if screening_res else ""
+    
+    mcq_score = st.session_state.get("mcq_score", 0)
+    
+    eval_res = st.session_state.get("evaluation_result")
+    selection_rec = "Selected" if eval_res and eval_res.selected else ("Not Selected" if eval_res else "N/A")
+    eval_summary = eval_res.summary_for_candidate if eval_res else ""
+    
+    import datetime
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    match_score = screening_res.match_score if screening_res and hasattr(screening_res, "match_score") else 0
+    matched_skills = screening_res.matched_skills if screening_res and hasattr(screening_res, "matched_skills") else []
+    missing_skills = screening_res.missing_skills if screening_res and hasattr(screening_res, "missing_skills") else []
+    red_flags = screening_res.red_flags if screening_res and hasattr(screening_res, "red_flags") else []
+    
+    candidate_data = {
+        "name": name,
+        "email": email,
+        "phone": phone,
+        "job_role": role,
+        "experience": exp,
+        "status": friendly_status,
+        "screening_reason": screening_reason,
+        "match_score": match_score,
+        "matched_skills": matched_skills,
+        "missing_skills": missing_skills,
+        "red_flags": red_flags,
+        "mcq_score": f"{mcq_score}/5" if stage in ["mcq", "mcq_passed_screen", "mcq_failed_screen", "interview", "final_evaluation"] else "N/A",
+        "selection": selection_rec,
+        "summary": eval_summary,
+        "timestamp": timestamp
+    }
+    
+    try:
+        records = load_candidates()
+        updated = False
+        for idx, rec in enumerate(records):
+            if rec.get("email") == email and rec.get("job_role") == role:
+                records[idx] = candidate_data
+                updated = True
+                break
+        if not updated:
+            records.append(candidate_data)
+            
+        with open(CANDIDATES_FILE, "w") as f:
+            json.dump(records, f, indent=2)
+    except Exception as e:
+        pass
+
+def generate_ai_jd(job_title, brief_description):
+    try:
+        config = Config.load_config()
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from langchain_core.prompts import ChatPromptTemplate
+        
+        chat_model = ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash",
+            google_api_key=config.GEMINI_API_KEY,
+            temperature=0.3
+        )
+        
+        prompt_tpl = ChatPromptTemplate.from_messages([
+            ("system", "You are an expert HR recruitment specialist. Generate a concise, professional, and well-structured job description for the given job title based on the brief notes provided. Include: 1) Role Overview, 2) Key Responsibilities, 3) Required Skills. Keep the entire response under 180 words total and do not include markdown styling other than clean paragraphs or bullet points."),
+            ("human", "Job Title: {title}\nNotes/Requirements: {notes}")
+        ])
+        
+        chain = prompt_tpl | chat_model
+        response = chain.invoke({
+            "title": job_title,
+            "notes": brief_description
+        })
+        return response.content.strip()
+    except Exception as e:
+        return f"Error generating Job Description: {e}"
+
+# Load jobs dynamically
+jobs_db = load_jobs()
+PREDEFINED_JDS = {}
+JOB_DIFFICULTIES = {}
+for role, data in jobs_db.items():
+    if isinstance(data, dict):
+        PREDEFINED_JDS[role] = data.get("description", "")
+        JOB_DIFFICULTIES[role] = data.get("difficulty", "Medium")
+    else:
+        PREDEFINED_JDS[role] = data
+        JOB_DIFFICULTIES[role] = "Medium"
+
+PREDEFINED_JDS["Custom / Write your own"] = ""
+JOB_DIFFICULTIES["Custom / Write your own"] = "Medium"
 
 # Initialize session state keys
 if "stage" not in st.session_state:
@@ -380,20 +560,293 @@ Rules:
                 st.write(f"Assistant error: {str(e)}")
 
 # ----------------- PAGE NAVIGATION -----------------
-page = st.radio("Navigation", ["📋 Open Positions", "🎯 Candidate Assessment"], horizontal=True, label_visibility="collapsed", key="active_page")
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "📋 Open Positions"
+
+nav_options = ["📋 Open Positions", "🎯 Candidate Assessment", "🔒 Recruiter Portal"]
+default_nav_idx = nav_options.index(st.session_state.current_page) if st.session_state.current_page in nav_options else 0
+
+page = st.radio("Navigation", nav_options, index=default_nav_idx, horizontal=True, label_visibility="collapsed")
+st.session_state.current_page = page
 
 if page == "📋 Open Positions":
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="stage-title">Current Job Openings</div>', unsafe_allow_html=True)
-    st.write("Browse through our currently open positions. Click the 'Candidate Assessment' tab above to apply!")
+    st.markdown('<div class="glass-card" style="text-align: center;">', unsafe_allow_html=True)
+    st.markdown('<div class="recruit-header" style="font-size: 2.2rem; margin-bottom: 10px; background: linear-gradient(135deg, #f97316, #ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">💼 Explore Career Opportunities</div>', unsafe_allow_html=True)
+    st.markdown('<div style="color: #64748b; font-size: 1.05rem;">Select a position below to view requirements and start your AI-guided assessment.</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
     
     for role, jd in PREDEFINED_JDS.items():
         if role != "Custom / Write your own":
-            st.markdown(f'<div class="glass-card">', unsafe_allow_html=True)
-            st.markdown(f'<h3 style="color: #ea580c; margin-top: 0; font-size: 1.35rem;">{role}</h3>', unsafe_allow_html=True)
-            st.markdown(f'<div class="jd-container" style="max-height: none; background-color: #fffaf4;">{jd}</div>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="glass-card" style="border-left: 6px solid #ea580c; padding: 25px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h3 style="color: #1e293b; margin: 0; font-size: 1.45rem; font-weight: 700;">{role}</h3>
+                </div>
+                <div style="color: #475569; line-height: 1.6; font-size: 0.95rem; margin-bottom: 15px; white-space: pre-wrap;">{jd}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Interactive columns for applying directly
+            col1, col2 = st.columns([6, 2])
+            with col2:
+                if st.button(f"Apply Now →", key=f"apply_btn_{role}", use_container_width=True):
+                    st.session_state.selected_role_val = role
+                    st.session_state.current_page = "🎯 Candidate Assessment"
+                    st.rerun()
+            st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+    st.stop()
+
+elif page == "🔒 Recruiter Portal":
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown('<div class="stage-title">🔒 Recruiter Portal</div>', unsafe_allow_html=True)
+    
+    if "recruiter_authenticated" not in st.session_state:
+        st.session_state.recruiter_authenticated = False
+        
+    if not st.session_state.recruiter_authenticated:
+        st.write("Please authenticate to access recruiter settings.")
+        password = st.text_input("Enter Recruiter Password", type="password", key="recruiter_pass_input")
+        if st.button("Login"):
+            if password == "recruiter123":
+                st.session_state.recruiter_authenticated = True
+                st.success("Successfully authenticated!")
+                st.rerun()
+            else:
+                st.error("Invalid password. Please try again.")
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.stop()
+        
+    col1, col2 = st.columns([6, 2])
+    with col1:
+        st.write("Hello Recruiter! Welcome to your administrative control center.")
+    with col2:
+        if st.button("Logout Recruiter", use_container_width=True):
+            st.session_state.recruiter_authenticated = False
+            st.rerun()
+            
+    st.markdown("---")
+    
+    # Recruiter Portal Tabs
+    portal_tab1, portal_tab2 = st.tabs(["💼 Job Management & AI Assistant", "🧑 Candidate Assessments Hub"])
+    
+    with portal_tab1:
+        st.subheader("Current Active Roles")
+        jobs = load_jobs()
+        if jobs:
+            for title, data in jobs.items():
+                desc = data.get("description", data) if isinstance(data, dict) else data
+                diff = data.get("difficulty", "Medium") if isinstance(data, dict) else "Medium"
+                with st.expander(f"{title} (Difficulty: {diff})"):
+                    st.write(desc)
+        else:
+            st.info("No active jobs currently listed.")
+            
+        st.markdown("---")
+        
+        action = st.selectbox("Action", ["Add New Job", "Update Job Description", "Delete Job"])
+        
+        if action == "Add New Job":
+            st.write("### Create a New Job Opening")
+            new_title = st.text_input("Job Title", placeholder="e.g. DevOps Engineer")
+            
+            brief_notes = st.text_input("AI Assistant Input (Brief skills/notes)", placeholder="e.g. React, TypeScript, 3 years exp, state management, hybrid")
+            if st.button("🪄 Auto-Generate JD with AI"):
+                if not new_title.strip():
+                    st.error("Please enter a Job Title first.")
+                elif not brief_notes.strip():
+                    st.error("Please enter brief notes or skills for the AI to work with.")
+                else:
+                    with st.spinner("Gemini is drafting the job description..."):
+                        draft = generate_ai_jd(new_title.strip(), brief_notes.strip())
+                        st.session_state.generated_jd_draft = draft
+                        st.rerun()
+            
+            default_jd = st.session_state.get("generated_jd_draft", "")
+            new_jd = st.text_area("Job Description Details", value=default_jd, height=200, placeholder="Paste or edit the job requirements here...")
+            new_diff = st.selectbox("Select Target Difficulty Level", ["Very Easy", "Easy", "Medium", "Hard"], index=2)
+            
+            if st.button("Create Job Opening"):
+                if not new_title.strip() or not new_jd.strip():
+                    st.error("Please fill in both the Job Title and Job Description.")
+                elif new_title.strip() in jobs:
+                    st.error(f"Job title '{new_title.strip()}' already exists.")
+                else:
+                    jobs[new_title.strip()] = {
+                        "description": new_jd.strip(),
+                        "difficulty": new_diff
+                    }
+                    if save_jobs(jobs):
+                        if "generated_jd_draft" in st.session_state:
+                            del st.session_state.generated_jd_draft
+                        st.success(f"Job opening '{new_title}' successfully created!")
+                        time.sleep(1)
+                        st.rerun()
+                        
+        elif action == "Update Job Description":
+            st.write("### Edit an Existing Job Opening")
+            if not jobs:
+                st.info("No active jobs to update.")
+            else:
+                selected_job = st.selectbox("Select Job to Edit", list(jobs.keys()))
+                
+                brief_notes = st.text_input("AI Assistant Input (Optional brief skills to rewrite)", placeholder="e.g. Add AWS and Kubernetes requirement")
+                if st.button("🪄 Auto-Regenerate JD with AI"):
+                    if not brief_notes.strip():
+                        st.error("Please enter brief notes or skills to regenerate.")
+                    else:
+                        with st.spinner("Gemini is regenerating the job description..."):
+                            draft = generate_ai_jd(selected_job, brief_notes.strip())
+                            st.session_state.generated_jd_draft = draft
+                            st.rerun()
+                            
+                selected_job_data = jobs[selected_job]
+                current_jd = selected_job_data.get("description", selected_job_data) if isinstance(selected_job_data, dict) else selected_job_data
+                current_diff = selected_job_data.get("difficulty", "Medium") if isinstance(selected_job_data, dict) else "Medium"
+                
+                default_jd = st.session_state.get("generated_jd_draft", current_jd)
+                updated_jd = st.text_area("Job Description", value=default_jd, height=200)
+                
+                diff_options = ["Very Easy", "Easy", "Medium", "Hard"]
+                default_diff_idx = diff_options.index(current_diff) if current_diff in diff_options else 2
+                updated_diff = st.selectbox("Edit Difficulty Level", diff_options, index=default_diff_idx)
+                
+                if st.button("Save Changes"):
+                    jobs[selected_job] = {
+                        "description": updated_jd,
+                        "difficulty": updated_diff
+                    }
+                    if save_jobs(jobs):
+                        if "generated_jd_draft" in st.session_state:
+                            del st.session_state.generated_jd_draft
+                        st.success(f"Job opening '{selected_job}' successfully updated!")
+                        time.sleep(1)
+                        st.rerun()
+                        
+        elif action == "Delete Job":
+            st.write("### Delete a Job Opening")
+            if not jobs:
+                st.info("No active jobs to delete.")
+            else:
+                selected_job = st.selectbox("Select Job to Delete", list(jobs.keys()))
+                st.warning(f"Are you sure you want to permanently delete the '{selected_job}' position?")
+                if st.button("Confirm Delete"):
+                    del jobs[selected_job]
+                    if save_jobs(jobs):
+                        st.success(f"Job opening '{selected_job}' successfully deleted!")
+                        time.sleep(1)
+                        st.rerun()
+                        
+
+    with portal_tab2:
+        st.subheader("Recruiter Analytics & Leaderboard")
+        candidates = load_candidates()
+        
+        if not candidates:
+            st.info("No candidates have started or completed the test yet.")
+        else:
+            import pandas as pd
+            df_candidates = pd.DataFrame(candidates)
+            
+            # Sort candidates by match_score descending if it exists
+            if "match_score" in df_candidates.columns:
+                df_candidates = df_candidates.sort_values(by="match_score", ascending=False)
+            
+            st.write("Ranked by AI Resume Match Score:")
+            display_cols = ["name", "email", "job_role", "match_score", "mcq_score", "selection", "status"]
+            # Ensure all columns exist
+            for col in display_cols:
+                if col not in df_candidates.columns:
+                    df_candidates[col] = "N/A"
+            df_display = df_candidates[display_cols]
+            df_display.columns = ["Name", "Email", "Applied Role", "Match Score (%)", "MCQ Score", "Selection Recommendation", "Pipeline Stage"]
+            
+            st.dataframe(df_display, use_container_width=True)
+            
+            st.markdown("---")
+            st.subheader("Detailed Evaluation & Skill Gap Analysis")
+            
+            selected_cand = st.selectbox("Select Candidate to view detailed scorecard", [f"{c['name']} ({c['email']}) - {c['job_role']}" for c in candidates])
+            
+            matched_candidate = None
+            for c in candidates:
+                if f"{c['name']} ({c['email']}) - {c['job_role']}" == selected_cand:
+                    matched_candidate = c
+                    break
+            
+            if matched_candidate:
+                st.markdown(f'<div class="glass-card" style="border-left: 5px solid #f97316; padding: 20px;">', unsafe_allow_html=True)
+                st.markdown(f"### Scorecard: {matched_candidate['name']}")
+                
+                # Visual Match Score Progress Bar
+                score = int(matched_candidate.get("match_score", 0))
+                st.write(f"**AI Match Score**: **{score}%**")
+                st.progress(score / 100.0)
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(f"📧 **Email**: {matched_candidate['email']}")
+                    st.write(f"📞 **Phone**: {matched_candidate['phone']}")
+                    st.write(f"💼 **Role**: {matched_candidate['job_role']}")
+                with col2:
+                    st.write(f"⏳ **Experience Level**: {matched_candidate['experience']}")
+                    st.write(f"📌 **Pipeline Status**: `{matched_candidate['status']}`")
+                    st.write(f"📊 **MCQ Score**: `{matched_candidate['mcq_score']}`")
+                
+                # Skill Gap Analysis
+                st.write("#### 🎯 Skill Mapping & Gap Analysis")
+                
+                # Matched Skills
+                matched_skills = matched_candidate.get("matched_skills", [])
+                if matched_skills:
+                    st.write("✅ **Matched Skills (Present in Resume):**")
+                    tags_html = "".join([f'<span style="background-color: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; margin-right: 8px; display: inline-block; margin-bottom: 5px;">{skill}</span>' for skill in matched_skills])
+                    st.markdown(tags_html, unsafe_allow_html=True)
+                else:
+                    st.write("✅ **Matched Skills:** None identified.")
+                
+                # Missing Skills
+                missing_skills = matched_candidate.get("missing_skills", [])
+                if missing_skills:
+                    st.write("⚠️ **Missing Skills (Required for JD):**")
+                    tags_html = "".join([f'<span style="background-color: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; margin-right: 8px; display: inline-block; margin-bottom: 5px;">{skill}</span>' for skill in missing_skills])
+                    st.markdown(tags_html, unsafe_allow_html=True)
+                else:
+                    st.write("⚠️ **Missing Skills:** None identified.")
+                
+                # Red Flags
+                red_flags = matched_candidate.get("red_flags", [])
+                # Filter out standard nones
+                has_red_flags = False
+                if red_flags:
+                    if isinstance(red_flags, list):
+                        has_red_flags = any(x.lower() not in ["none", ""] for x in red_flags)
+                    else:
+                        has_red_flags = red_flags.lower() not in ["none", ""]
+                        
+                if has_red_flags:
+                    st.write("🚩 **Red Flags / Hiring Concerns:**")
+                    if isinstance(red_flags, list):
+                        for flag in red_flags:
+                            if flag.lower() not in ["none", ""]:
+                                st.markdown(f"- <span style='color: #ef4444; font-weight: 500;'>{flag}</span>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"- <span style='color: #ef4444; font-weight: 500;'>{red_flags}</span>", unsafe_allow_html=True)
+                
+                # Screening explanations
+                if matched_candidate.get("screening_reason"):
+                    st.markdown("**Screening Feedback:**")
+                    st.info(matched_candidate["screening_reason"])
+                
+                # Interview recommendation
+                st.write("#### 🎤 Interview Recommendation")
+                st.write(f"Recommendation: **{matched_candidate.get('selection', 'N/A')}**")
+                if matched_candidate.get("summary"):
+                    st.markdown("**Hiring Committee Summary:**")
+                    st.success(matched_candidate["summary"])
+                    
+                st.markdown('</div>', unsafe_allow_html=True)
+                        
+    st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
 # Helper function to reset candidate progress
@@ -474,6 +927,7 @@ if st.session_state.stage == "upload":
                         st.session_state.stage = "screening_passed"
                     else:
                         st.session_state.stage = "screening_failed"
+                    log_candidate_state()
                     st.rerun()
                 except Exception as e:
                     st.error(f"Error invoking Screening Agent: {str(e)}")
@@ -492,10 +946,12 @@ elif st.session_state.stage == "screening_passed":
     if st.button("Begin Technical MCQ Round"):
         with st.spinner("Generating customized MCQ technical questions..."):
             try:
+                job_diff = JOB_DIFFICULTIES.get(st.session_state.job_role, "Medium")
                 mcq_agent = MCQAgent()
                 mcq_list = mcq_agent.run(
                     resume_text=st.session_state.resume_text,
                     job_role=st.session_state.job_role,
+                    difficulty=job_diff,
                     num_questions=5
                 )
                 st.session_state.mcqs = mcq_list.questions
@@ -543,9 +999,10 @@ elif st.session_state.stage == "mcq":
             st.error("Please answer all multiple-choice questions before submitting.")
         else:
             # Score results deterministically
+            # Score results deterministically
             score, pct, results = MCQAgent.grade_answers(st.session_state.mcqs, temp_answers)
             st.session_state.mcq_score = score
-            st.session_state.mcq_passed = True
+            st.session_state.mcq_passed = score >= 3
             
             # Save results list if we want to display details
             st.session_state.mcq_answers = temp_answers
@@ -554,6 +1011,7 @@ elif st.session_state.stage == "mcq":
                 st.session_state.stage = "mcq_passed_screen"
             else:
                 st.session_state.stage = "mcq_failed_screen"
+            log_candidate_state()
             st.rerun()
 
 # ----------------- STAGE 4: MCQ RESULTS -----------------
@@ -569,8 +1027,9 @@ elif st.session_state.stage == "mcq_passed_screen":
         st.session_state.stage = "interview"
         # Initial greeting in chat history
         st.session_state.chat_history = [
-            {"role": "assistant", "content": f"Hello {st.session_state.candidate_name}. Welcome to your technical interview for the {st.session_state.job_role} role. Let's start with a very basic question: What is Machine Learning, and what are the main types of Machine Learning?"}
+            {"role": "assistant", "content": f"Hello {st.session_state.candidate_name}. Welcome to your technical interview for the {st.session_role if hasattr(st.session_state, 'session_role') else st.session_state.job_role} role. Let's start with a very basic question: What is Machine Learning, and what are the main types of Machine Learning?"}
         ]
+        log_candidate_state()
         st.rerun()
 
 elif st.session_state.stage == "mcq_failed_screen":
@@ -664,12 +1123,14 @@ elif st.session_state.stage == "interview":
                     interview_agent = InterviewAgent()
                     # We pass the history (excluding the very first welcoming greeting in the count)
                     # We ask 3 total questions (excluding welcome)
+                    job_diff = JOB_DIFFICULTIES.get(st.session_state.job_role, "Medium")
                     res = interview_agent.run(
                         resume_text=st.session_state.resume_text,
                         job_role=st.session_state.job_role,
                         experience=st.session_state.experience,
                         job_description=st.session_state.job_description,
                         conversation_history=st.session_state.chat_history,
+                        difficulty=job_diff,
                         num_questions=3
                     )
                     
@@ -694,6 +1155,7 @@ elif st.session_state.stage == "interview":
                     )
                     st.session_state.evaluation_result = eval_res
                     st.session_state.stage = "final_evaluation"
+                    log_candidate_state()
                     st.rerun()
                 except Exception as e:
                     st.error(f"Error during final evaluation: {str(e)}")

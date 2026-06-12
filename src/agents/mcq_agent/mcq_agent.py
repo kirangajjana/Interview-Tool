@@ -6,7 +6,7 @@ class MCQAgent(BaseAgent):
     def __init__(self):
         super().__init__(system_prompt=MCQ_GENERATION_SYSTEM_PROMPT, temperature=0.3)
 
-    def run(self, resume_text: str, job_role: str, num_questions: int = 5) -> MCQList:
+    def run(self, resume_text: str, job_role: str, difficulty: str = "Medium", num_questions: int = 5) -> MCQList:
         """Generates tailored technical MCQs based on candidate profile."""
         structured_llm = self.llm.with_structured_output(MCQList)
         chain = self.prompt_template | structured_llm
@@ -18,6 +18,7 @@ Candidate Resume:
         return chain.invoke({
             "num_questions": str(num_questions),
             "job_role": job_role,
+            "difficulty": difficulty,
             "input_text": input_text
         })
         

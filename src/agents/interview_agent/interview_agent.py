@@ -7,7 +7,7 @@ class InterviewAgent(BaseAgent):
     def __init__(self):
         super().__init__(system_prompt=INTERVIEW_SYSTEM_PROMPT, temperature=0.5)
 
-    def run(self, resume_text: str, job_role: str, experience: str, job_description: str, conversation_history: list, num_questions: int = 3) -> InterviewResponse:
+    def run(self, resume_text: str, job_role: str, experience: str, job_description: str, conversation_history: list, difficulty: str = "Medium", num_questions: int = 3) -> InterviewResponse:
         """Determines the next conversation turn and whether to conclude the chat."""
         structured_llm = self.llm.with_structured_output(InterviewResponse)
         chain = self.prompt_template | structured_llm
@@ -33,6 +33,7 @@ Conversation History:
         return chain.invoke({
             "job_role": job_role,
             "experience": experience,
+            "difficulty": difficulty,
             "num_questions": str(num_questions),
             "input_text": input_text
         })

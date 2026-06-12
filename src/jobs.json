@@ -1,0 +1,26 @@
+{
+  "Machine Learning Engineer": {
+    "description": "Machine Learning Engineer\n\nThis role involves designing, building, and deploying scalable machine learning models and NLP systems. You will collaborate with data scientists to transition experimental models into highly available production systems.\n\nKey Responsibilities:\n*   Design and train machine learning models and NLP pipelines.\n*   Optimize models for latency, scalability, and resource usage.\n*   Build production-ready APIs to serve models using FastAPI or Flask.\n*   Collaborate with engineering teams to deploy models using Docker.\n\nRequired Skills:\n*   Strong proficiency in Python (PyTorch, TensorFlow, Scikit-Learn).\n*   Experience in NLP, text classification, and vector databases.\n*   Familiarity with containerization (Docker) and API design.\n*   Understanding of standard machine learning lifecycle patterns.",
+    "difficulty": "Medium"
+  },
+  "Full Stack Developer": {
+    "description": "Full Stack Developer\n\nThis role involves developing end-to-end features for web applications, spanning high-performance backend APIs to responsive and intuitive frontend interfaces.\n\nKey Responsibilities:\n*   Develop scalable backend services in Python using FastAPI or Flask.\n*   Design and build clean, responsive frontends using modern frameworks (React or Vue.js).\n*   Manage and query SQL and NoSQL database layers.\n*   Collaborate with product designers to implement pixel-perfect web designs.\n\nRequired Skills:\n*   Strong backend skills in Python (FastAPI/Flask).\n*   Proficiency in HTML5, CSS3, JavaScript/TypeScript, and React/Vue.\n*   Experience with relational databases (SQL) and state management.\n*   Familiarity with cloud platforms (AWS, GCP) and Git version control.",
+    "difficulty": "Medium"
+  },
+  "Data Scientist": {
+    "description": "Data Scientist\n\nThis role focuses on analyzing large, complex datasets, building statistical models, and translating insights into actionable business decisions.\n\nKey Responsibilities:\n*   Extract, clean, and analyze large datasets from structured and unstructured sources.\n*   Build predictive models and statistical algorithms using machine learning.\n*   Create clean visualizations and dashboards to report insights to stakeholders.\n*   Conduct A/B testing and statistical analyses to measure product changes.\n\nRequired Skills:\n*   Strong expertise in Python (pandas, numpy, scikit-learn).\n*   Proficiency in writing complex SQL queries.\n*   Experience with data visualization tools (Matplotlib, Tableau, or Seaborn).\n*   Solid understanding of statistical analysis and hypothesis testing.",
+    "difficulty": "Medium"
+  },
+  "Data Engineer": {
+    "description": "Data Engineer\n\nThis role involves designing, building, and maintaining high-performance, robust data pipelines and warehousing architectures to support data analysis and modeling.\n\nKey Responsibilities:\n*   Design, implement, and maintain scalable ETL/ELT pipelines.\n*   Build and optimize data warehouse architectures (Snowflake or BigQuery).\n*   Orchestrate data workflows and schedules using Apache Airflow.\n*   Ensure data quality, integrity, and compliance across systems.\n\nRequired Skills:\n*   Proficiency in Python and advanced SQL database engineering.\n*   Hands-on experience with data warehousing (Snowflake, BigQuery).\n*   Experience with data processing engines (Apache Spark) and orchestrators (Airflow).\n*   Strong understanding of data modeling concepts.",
+    "difficulty": "Medium"
+  },
+  "Software Engineer": {
+    "description": "Software Engineer\n\nThis role involves designing, developing, testing, and maintaining core software services and tools to deliver reliable software solutions.\n\nKey Responsibilities:\n*   Write clean, readable, and well-tested Python code.\n*   Apply software design patterns and clean architecture principles.\n*   Write comprehensive unit and integration tests.\n*   Participate in code reviews and collaborate using Git version control.\n\nRequired Skills:\n*   Proficiency in Python programming.\n*   Solid understanding of object-oriented programming (OOP) and design patterns.\n*   Experience writing automated unit tests.\n*   Familiarity with Agile software development lifecycles.",
+    "difficulty": "Medium"
+  },
+  "ai/ml engineer": {
+    "description": "AI/ML Engineer\n\nThis role involves designing, developing, and deploying cutting-edge AI/ML solutions and intelligent applications. You will be instrumental in building scalable systems that leverage the latest advancements in machine learning and large language models.\n\nKey Responsibilities:\n*   Develop, test, and deploy AI/ML models and pipelines using Python.\n*   Design and implement LLM-powered applications using LangChain and LangGraph.\n*   Build high-performance APIs with FastAPI to integrate ML services.\n*   Manage and deploy AI/ML solutions on cloud platforms.\n*   Collaborate with cross-functional teams to define and deliver product features.\n\nRequired Skills:\n*   Proficiency in Python programming.\n*   Hands-on experience with LangChain and LangGraph.\n*   Strong knowledge of FastAPI for API development.\n*   Experience with cloud platforms (AWS, Azure, GCP).\n*   Solid understanding of machine learning principles.",
+    "difficulty": "Very Easy"
+  }
+}
