@@ -96,5 +96,4 @@ streamlit run app.py
 ```
 
 * **Candidate Portal**: Access the default views (`Open Positions` and `Candidate Assessment`) to apply and complete the technical tests.
-* **Recruiter Portal**: Navigate to the `🔒 Recruiter Portal` tab and log in using the default credentials:
-  * **Password**: `recruiter123`
+* **Recruiter Portal**: Navigate to the `🔒 Recruiter Portal` tab to access administrative and candidate evaluation dashboards directly.

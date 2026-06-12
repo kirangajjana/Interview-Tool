@@ -600,30 +600,7 @@ elif page == "🔒 Recruiter Portal":
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown('<div class="stage-title">🔒 Recruiter Portal</div>', unsafe_allow_html=True)
     
-    if "recruiter_authenticated" not in st.session_state:
-        st.session_state.recruiter_authenticated = False
-        
-    if not st.session_state.recruiter_authenticated:
-        st.write("Please authenticate to access recruiter settings.")
-        password = st.text_input("Enter Recruiter Password", type="password", key="recruiter_pass_input")
-        if st.button("Login"):
-            if password == "recruiter123":
-                st.session_state.recruiter_authenticated = True
-                st.success("Successfully authenticated!")
-                st.rerun()
-            else:
-                st.error("Invalid password. Please try again.")
-        st.markdown('</div>', unsafe_allow_html=True)
-        st.stop()
-        
-    col1, col2 = st.columns([6, 2])
-    with col1:
-        st.write("Hello Recruiter! Welcome to your administrative control center.")
-    with col2:
-        if st.button("Logout Recruiter", use_container_width=True):
-            st.session_state.recruiter_authenticated = False
-            st.rerun()
-            
+    st.write("Hello Recruiter! Welcome to your administrative control center.")
     st.markdown("---")
     
     # Recruiter Portal Tabs
