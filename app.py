@@ -15,7 +15,7 @@ from src.agents.repeat_agent import RepeatAgent
 st.set_page_config(
     page_title="AgentFlow Recruitment",
     page_icon="💼",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="collapsed"
 )
 
@@ -30,8 +30,46 @@ st.markdown("""
     }
     
     .stApp {
-        background-color: #fffbf8;
+        background: linear-gradient(135deg, #fff7ed 0%, #fafaf9 55%, #fef2f2 100%) !important;
         color: #1e293b;
+    }
+    
+    /* Center and constrain main content width for visual balance on wide monitors */
+    .block-container {
+        padding-top: 1.5rem !important;
+        padding-bottom: 2rem !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+        max-width: 1380px;
+        margin: 0 auto;
+    }
+    
+    /* Style sidebar with matching glassmorphic frame */
+    section[data-testid="stSidebar"] {
+        background-color: #fafaf9 !important;
+        border-right: 1px solid rgba(253, 186, 116, 0.25) !important;
+    }
+    
+    /* Hide Streamlit Header, MainMenu, Footer, Toolbar */
+    [data-testid="stHeader"] {
+        visibility: hidden;
+        height: 0px !important;
+        padding: 0px !important;
+    }
+    #MainMenu {
+        visibility: hidden;
+    }
+    footer {
+        visibility: hidden;
+    }
+    [data-testid="stToolbar"] {
+        visibility: hidden;
+    }
+    [data-testid="stDecoration"] {
+        display: none !important;
+    }
+    [data-testid="stStatusWidget"] {
+        display: none !important;
     }
     
     /* Entrance Animations */
@@ -219,33 +257,59 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
     
-    /* Navigation Pills styling */
+    /* Navigation Pills layout styling */
     div[data-testid="stRadio"] > div[role="radiogroup"] {
-        background-color: #f8fafc !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 30px;
-        padding: 6px 12px !important;
+        background: rgba(255, 255, 255, 0.7) !important;
+        border: 1px solid rgba(253, 186, 116, 0.4) !important;
+        border-radius: 100px;
+        padding: 8px !important;
         display: flex;
         flex-direction: row;
         justify-content: center;
         gap: 10px;
-        margin-bottom: 25px;
+        margin-bottom: 35px;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 10px 25px -10px rgba(249, 115, 22, 0.08);
     }
     
+    /* Hide the radio button circles visually by making them tiny and transparent */
+    div[data-testid="stRadio"] label[data-baseweb="radio"] > div:first-child {
+        opacity: 0 !important;
+        width: 0px !important;
+        height: 0px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+    
+    /* Style the labels as tabs */
     div[data-testid="stRadio"] label[data-baseweb="radio"] {
-        background-color: transparent;
-        border: none;
-        padding: 6px 16px;
-        border-radius: 20px;
-        color: #64748b;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
+        background-color: transparent !important;
+        border: none !important;
+        padding: 12px 36px !important;
+        border-radius: 100px !important;
+        color: #475569 !important;
+        font-weight: 600 !important;
+        font-size: 1.05rem !important;
+        cursor: pointer !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
     
+    /* Hover state */
     div[data-testid="stRadio"] label[data-baseweb="radio"]:hover {
-        color: #ea580c;
-        background-color: #fff7ed;
+        color: #ea580c !important;
+        background-color: rgba(254, 215, 170, 0.2) !important;
+    }
+    
+    /* Active/Checked state */
+    div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {
+        color: #ffffff !important;
+        background: linear-gradient(135deg, #f97316, #ea580c) !important;
+        box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25) !important;
     }
     
     /* Custom buttons */
@@ -265,6 +329,156 @@ st.markdown("""
         box-shadow: 0 10px 20px rgba(234, 88, 12, 0.3);
         background: linear-gradient(135deg, #ea580c, #c2410c);
         color: white !important;
+    }
+    
+    /* Stepper Progress Indicator Styling */
+    .stepper-wrapper {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 35px;
+        position: relative;
+        padding: 0 10px;
+        animation: fadeInUp 0.5s ease;
+    }
+    .stepper-wrapper::before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background-color: #ffedd5;
+        z-index: 1;
+    }
+    .stepper-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+        flex: 1;
+    }
+    .step-counter {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 2px solid #ffedd5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: 700;
+        color: #94a3b8;
+        transition: all 0.4s ease;
+    }
+    .step-name {
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: #64748b;
+        margin-top: 8px;
+        text-align: center;
+        transition: all 0.4s ease;
+    }
+    /* Completed state */
+    .stepper-item.completed .step-counter {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border-color: #10b981;
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+    }
+    .stepper-item.completed .step-name {
+        color: #059669;
+        font-weight: 600;
+    }
+    /* Active state */
+    .stepper-item.active .step-counter {
+        background: linear-gradient(135deg, #f97316, #ea580c);
+        color: white;
+        border-color: #ea580c;
+        box-shadow: 0 0 15px rgba(234, 88, 12, 0.35);
+        transform: scale(1.08);
+    }
+    .stepper-item.active .step-name {
+        color: #ea580c;
+        font-weight: 700;
+    }
+    
+    /* Custom Chat Interface Styling */
+    .chat-bubble-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 25px;
+        padding: 5px;
+    }
+    .chat-bubble {
+        max-width: 85%;
+        padding: 16px 20px;
+        border-radius: 18px;
+        font-size: 0.96rem;
+        line-height: 1.55;
+        animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .chat-bubble-assistant {
+        align-self: flex-start;
+        background-color: #ffffff;
+        border: 1px solid #ffedd5;
+        color: #1e293b;
+        border-bottom-left-radius: 4px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+    }
+    .chat-bubble-user {
+        align-self: flex-end;
+        background: linear-gradient(135deg, #f97316, #ea580c);
+        color: #ffffff;
+        border-bottom-right-radius: 4px;
+        box-shadow: 0 4px 10px rgba(234, 88, 12, 0.15);
+    }
+    .chat-avatar {
+        font-size: 1.25rem;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+    
+    /* Recruiter Portal Dashboard metrics */
+    .metrics-grid {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    }
+    .metric-card {
+        background: #ffffff;
+        border: 1px solid #ffedd5;
+        border-radius: 12px;
+        padding: 22px;
+        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.03);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+        min-width: 200px;
+        transition: transform 0.3s ease;
+        animation: fadeInUp 0.5s ease both;
+    }
+    .metric-card:hover {
+        transform: translateY(-2px);
+    }
+    .metric-val {
+        font-size: 2.2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #f97316, #ea580c);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0;
+    }
+    .metric-label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -294,6 +508,58 @@ st.components.v1.html("""
     }
 </script>
 """, height=0)
+
+# Stepper Progress Widget Function
+def render_stepper(current_stage):
+    stages_info = [
+        {"num": 1, "name": "Profile & Resume"},
+        {"num": 2, "name": "AI Screening"},
+        {"num": 3, "name": "Technical MCQ"},
+        {"num": 4, "name": "AI Interview"},
+        {"num": 5, "name": "Evaluation"}
+    ]
+    
+    stage_map = {
+        "upload": 1,
+        "screening_passed": 2,
+        "screening_failed": 2,
+        "mcq": 3,
+        "mcq_passed_screen": 3,
+        "mcq_failed_screen": 3,
+        "interview": 4,
+        "final_evaluation": 5
+    }
+    
+    current_idx = stage_map.get(current_stage, 1)
+    
+    html = '<div class="stepper-wrapper">'
+    for idx, stage in enumerate(stages_info, 1):
+        status_class = ""
+        symbol = str(stage["num"])
+        if idx < current_idx:
+            status_class = "completed"
+            symbol = "✓"
+        elif idx == current_idx:
+            status_class = "active"
+        
+        html += f'<div class="stepper-item {status_class}">'
+        html += f'<div class="step-counter">{symbol}</div>'
+        html += f'<div class="step-name">{stage["name"]}</div>'
+        html += '</div>'
+    html += '</div>'
+    st.markdown(html, unsafe_allow_html=True)
+
+# Chat text custom formatter function
+def format_chat_text(text):
+    import re
+    # Escape HTML to prevent broken layout
+    formatted = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    # Bold patterns
+    formatted = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', formatted)
+    formatted = re.sub(r'\*(.*?)\*', r'<em>\1</em>', formatted)
+    # Line breaks
+    formatted = formatted.replace("\n", "<br>")
+    return formatted
 
 JOBS_FILE = "src/jobs.json"
 
@@ -628,39 +894,69 @@ if "current_page" not in st.session_state:
 nav_options = ["📋 Open Positions", "🎯 Candidate Assessment", "🔒 Recruiter Portal"]
 default_nav_idx = nav_options.index(st.session_state.current_page) if st.session_state.current_page in nav_options else 0
 
-page = st.radio("Navigation", nav_options, index=default_nav_idx, horizontal=True, label_visibility="collapsed")
+page = st.radio("Navigation", nav_options, index=default_nav_idx, horizontal=True, label_visibility="collapsed", key="navigation_radio")
 st.session_state.current_page = page
 
 if page == "📋 Open Positions":
-    st.markdown('<div class="glass-card" style="text-align: center;">', unsafe_allow_html=True)
-    st.markdown('<div class="recruit-header" style="font-size: 2.2rem; margin-bottom: 10px; background: linear-gradient(135deg, #f97316, #ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">💼 Explore Career Opportunities</div>', unsafe_allow_html=True)
-    st.markdown('<div style="color: #64748b; font-size: 1.05rem;">Select a position below to view requirements and start your AI-guided assessment.</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="glass-card" style="text-align: center; margin-bottom: 25px;">
+        <div class="recruit-header" style="font-size: 2.2rem; margin-bottom: 10px; background: linear-gradient(135deg, #f97316, #ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">💼 Explore Career Opportunities</div>
+        <div style="color: #64748b; font-size: 1.05rem;">Select a position below to view requirements and start your AI-guided assessment.</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Platform highlights grid
+    st.markdown("""
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 35px; animation: fadeInUp 0.6s ease both;">
+        <div class="glass-card" style="margin-bottom: 0; padding: 22px; border-top: 4px solid #f97316; display: flex; flex-direction: column; gap: 8px;">
+            <h4 style="color: #ea580c; margin: 0; display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.25rem;">📄</span> 1. AI Resume Check</h4>
+            <p style="color: #475569; font-size: 0.88rem; line-height: 1.5; margin: 0;">Our parser instantly extracts your core competencies and evaluates match score against candidate expectations.</p>
+        </div>
+        <div class="glass-card" style="margin-bottom: 0; padding: 22px; border-top: 4px solid #3b82f6; display: flex; flex-direction: column; gap: 8px;">
+            <h4 style="color: #2563eb; margin: 0; display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.25rem;">🎯</span> 2. Custom MCQ</h4>
+            <p style="color: #475569; font-size: 0.88rem; line-height: 1.5; margin: 0;">Complete 5 technical MCQ screening questions dynamically customized for your background skills.</p>
+        </div>
+        <div class="glass-card" style="margin-bottom: 0; padding: 22px; border-top: 4px solid #10b981; display: flex; flex-direction: column; gap: 8px;">
+            <h4 style="color: #059669; margin: 0; display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.25rem;">🗣️</span> 3. Conversational AI</h4>
+            <p style="color: #475569; font-size: 0.88rem; line-height: 1.5; margin: 0;">Interact with our AI interviewer agent in a live dialogue with adaptive audio replay capabilities.</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('<h3 style="color: #1e293b; font-weight: 700; margin-bottom: 20px; font-size: 1.5rem;">🔥 Open Job Positions</h3>', unsafe_allow_html=True)
     
     for role, jd in PREDEFINED_JDS.items():
         if role != "Custom / Write your own":
+            job_diff = JOB_DIFFICULTIES.get(role, "Medium")
             st.markdown(f"""
             <div class="glass-card" style="border-left: 6px solid #ea580c; padding: 25px; margin-bottom: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                    <h3 style="color: #1e293b; margin: 0; font-size: 1.45rem; font-weight: 700;">{role}</h3>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h3 style="color: #1e293b; margin: 0; font-size: 1.35rem; font-weight: 700;">{role}</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <span style="background-color: #ffedd5; color: #ea580c; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">{job_diff} Level</span>
+                        <span style="background-color: #f1f5f9; color: #475569; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Full-Time</span>
+                    </div>
                 </div>
-                <div style="color: #475569; line-height: 1.6; font-size: 0.95rem; margin-bottom: 15px; white-space: pre-wrap;">{jd}</div>
+                <div style="color: #475569; line-height: 1.6; font-size: 0.95rem; margin-bottom: 5px; white-space: pre-wrap;">{jd}</div>
             </div>
             """, unsafe_allow_html=True)
             
-            # Interactive columns for applying directly
-            col1, col2 = st.columns([6, 2])
+            # Action button
+            col1, col2 = st.columns([7, 2.5])
             with col2:
                 if st.button(f"Apply Now →", key=f"apply_btn_{role}", use_container_width=True):
                     st.session_state.selected_role_val = role
                     st.session_state.current_page = "🎯 Candidate Assessment"
                     st.rerun()
-            st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='margin-bottom: 35px;'></div>", unsafe_allow_html=True)
     st.stop()
 
 elif page == "🔒 Recruiter Portal":
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="stage-title">🔒 Recruiter Portal</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="glass-card">
+        <div class="stage-title">🔒 Recruiter Portal</div>
+    </div>
+    """, unsafe_allow_html=True)
     
     st.write("Hello Recruiter! Welcome to your administrative control center.")
     
@@ -671,6 +967,35 @@ elif page == "🔒 Recruiter Portal":
         if auto_resolved:
             st.info(f"🤖 **AI Auto-Resolver Notification**: The AI agent has successfully resolved **{len(auto_resolved)}** candidate issue(s) automatically. You can review resolution logs under the **Support & Help Requests** tab.")
     except Exception:
+        pass
+
+    # Recruiter Portal Metrics Cards Grid
+    try:
+        cand_list = load_candidates()
+        ticket_list = load_issues()
+        total_cand = len(cand_list)
+        pending_tick = len([t for t in ticket_list if not t.get("resolved", False)])
+        selected_cand = len([c for c in cand_list if c.get("selection") == "Selected"])
+        sel_rate = int((selected_cand / total_cand) * 100) if total_cand > 0 else 0
+        
+        metrics_html = f"""
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <span class="metric-label">Total Applicants</span>
+                <h3 class="metric-val">{total_cand}</h3>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">AI Selection Rate</span>
+                <h3 class="metric-val">{sel_rate}%</h3>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">Pending Help Tickets</span>
+                <h3 class="metric-val" style="background: { 'linear-gradient(135deg, #ef4444, #dc2626)' if pending_tick > 0 else 'linear-gradient(135deg, #10b981, #059669)' }; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{pending_tick}</h3>
+            </div>
+        </div>
+        """
+        st.markdown(metrics_html, unsafe_allow_html=True)
+    except Exception as e:
         pass
 
     st.markdown("---")
@@ -1014,7 +1339,6 @@ elif page == "🔒 Recruiter Portal":
                     </div>
                     """, unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
 # Helper function to reset candidate progress
@@ -1029,6 +1353,9 @@ def restart_process():
     st.session_state.email_sent = False
     st.session_state.call_sent = False
     st.rerun()
+
+# Render candidate progress stepper
+render_stepper(st.session_state.stage)
 
 # ----------------- STAGE 1: REGISTRATION AND RESUME UPLOAD -----------------
 if st.session_state.stage == "upload":
@@ -1210,8 +1537,11 @@ if st.session_state.stage == "upload":
             </div>
             """, unsafe_allow_html=True)
 
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="stage-title">Candidate Profile & Resume Upload</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="glass-card" style="margin-bottom: 20px;">
+        <div class="stage-title">Candidate Profile & Resume Upload</div>
+    </div>
+    """, unsafe_allow_html=True)
     
     candidate_name = st.text_input("Full Name", placeholder="John Doe", key="candidate_name_val")
     candidate_email = st.text_input("Email Address", placeholder="john.doe@example.com", key="candidate_email_val")
@@ -1231,7 +1561,7 @@ if st.session_state.stage == "upload":
     
     uploaded_file = st.file_uploader("Upload Resume (PDF format)", type=["pdf"], key="uploaded_file_val")
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    
     
     # Process Submission
     if st.button("Apply & Start Screening"):
@@ -1300,14 +1630,17 @@ if st.session_state.stage == "upload":
 
 # ----------------- STAGE 2: SCREENING RESULTS SCREEN -----------------
 elif st.session_state.stage == "screening_passed":
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="stage-title" style="border-left-color: #10b981;">Screening Status: Qualified</div>', unsafe_allow_html=True)
-    st.success(f"Congratulations {st.session_state.candidate_name}! Your resume has cleared our initial screening.")
-    st.write("**Recruiter Assessment:**")
-    st.info(st.session_state.screening_result.reason)
-    
-    st.write("You are qualified to move to the **Technical MCQ Screening Round**. You will be moved to the next stage of evaluation.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="glass-card" style="border-left: 5px solid #10b981;">
+        <div class="stage-title" style="border-left: none; padding-left: 0; color: #059669;">Screening Status: Qualified</div>
+        <div style="color: #059669; font-weight: 600; margin-bottom: 12px; font-size: 1.1rem;">🎉 Congratulations {st.session_state.candidate_name}! Your resume has cleared our initial screening.</div>
+        <div style="font-weight: 600; margin-bottom: 6px; color: #1e293b;">Recruiter Assessment:</div>
+        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; margin-bottom: 15px; font-size: 0.95rem; color: #1e293b; line-height: 1.5;">
+            {st.session_state.screening_result.reason}
+        </div>
+        <p style="color: #475569; margin-bottom: 0;">You are qualified to move to the <strong>Technical MCQ Screening Round</strong>. Click the button below to proceed.</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     if st.button("Begin Technical MCQ Round"):
         with st.spinner("Generating customized MCQ technical questions..."):
@@ -1327,21 +1660,28 @@ elif st.session_state.stage == "screening_passed":
                 st.error(f"Error generating MCQs: {str(e)}")
 
 elif st.session_state.stage == "screening_failed":
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="stage-title" style="border-left-color: #ef4444;">Screening Status: Disqualified</div>', unsafe_allow_html=True)
-    st.error(f"Thank you for applying, {st.session_state.candidate_name}. Unfortunately, your profile does not meet our minimum requirements for this position.")
-    st.write("**Evaluation Feedback:**")
-    st.warning(st.session_state.screening_result.reason)
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="glass-card" style="border-left: 5px solid #ef4444;">
+        <div class="stage-title" style="border-left: none; padding-left: 0; color: #b91c1c;">Screening Status: Disqualified</div>
+        <div style="color: #b91c1c; font-weight: 600; margin-bottom: 12px; font-size: 1.1rem;">Thank you for applying, {st.session_state.candidate_name}. Unfortunately, your profile does not meet our minimum requirements for this position.</div>
+        <div style="font-weight: 600; margin-bottom: 6px; color: #1e293b;">Evaluation Feedback:</div>
+        <div style="background-color: #fdf2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 15px; font-size: 0.95rem; color: #1f2937; line-height: 1.5;">
+            {st.session_state.screening_result.reason}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
     if st.button("Try Again / Adjust Application"):
         restart_process()
 
 # ----------------- STAGE 3: TECHNICAL MCQ PHASE -----------------
 elif st.session_state.stage == "mcq":
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="stage-title">Stage 2: Technical MCQ Screening</div>', unsafe_allow_html=True)
-    st.info("Answer the following questions based on technical competencies. Passing threshold is 60% (3 out of 5 correct).")
+    st.markdown("""
+    <div class="glass-card" style="margin-bottom: 20px;">
+        <div class="stage-title">Stage 2: Technical MCQ Screening</div>
+        <div style="color: #64748b; font-size: 0.95rem;">Answer the following questions based on technical competencies. Passing threshold is 60% (3 out of 5 correct).</div>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Render MCQ form
     temp_answers = {}
@@ -1358,7 +1698,7 @@ elif st.session_state.stage == "mcq":
         if user_choice != "Select an option":
             temp_answers[idx] = user_choice
             
-    st.markdown('</div>', unsafe_allow_html=True)
+    
     
     if st.button("Submit MCQ Test"):
         if len(temp_answers) < len(st.session_state.mcqs):
@@ -1382,11 +1722,13 @@ elif st.session_state.stage == "mcq":
 
 # ----------------- STAGE 4: MCQ RESULTS -----------------
 elif st.session_state.stage == "mcq_passed_screen":
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="stage-title" style="border-left-color: #10b981;">MCQ Screening Passed</div>', unsafe_allow_html=True)
-    st.success(f"Great job! You scored {st.session_state.mcq_score}/5 ({st.session_state.mcq_score * 20}%).")
-    st.write("You have successfully passed the MCQ barrier and are eligible for the **Interactive Technical Interview Round**.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="glass-card" style="border-left: 5px solid #10b981;">
+        <div class="stage-title" style="border-left: none; padding-left: 0; color: #059669;">MCQ Screening Passed</div>
+        <div style="color: #059669; font-weight: 600; margin-bottom: 10px; font-size: 1.1rem;">🎉 Great job! You scored {st.session_state.mcq_score}/5 ({st.session_state.mcq_score * 20}%).</div>
+        <p style="color: #475569; margin-bottom: 0;">You have successfully passed the MCQ barrier and are eligible for the <strong>Interactive Technical Interview Round</strong>. Click below to start your interview.</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     if st.button("Proceed to Technical Interview"):
         # Set up initial welcome question from interview agent
@@ -1399,27 +1741,44 @@ elif st.session_state.stage == "mcq_passed_screen":
         st.rerun()
 
 elif st.session_state.stage == "mcq_failed_screen":
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="stage-title" style="border-left-color: #ef4444;">MCQ Screening Failed</div>', unsafe_allow_html=True)
-    st.error(f"You scored {st.session_state.mcq_score}/5. The passing score is at least 3/5.")
-    st.write("Unfortunately, we cannot proceed with your application at this time.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="glass-card" style="border-left: 5px solid #ef4444;">
+        <div class="stage-title" style="border-left: none; padding-left: 0; color: #b91c1c;">MCQ Screening Failed</div>
+        <div style="color: #b91c1c; font-weight: 600; margin-bottom: 10px; font-size: 1.1rem;">You scored {st.session_state.mcq_score}/5. The passing score is at least 3/5.</div>
+        <p style="color: #475569; margin-bottom: 0;">Unfortunately, we cannot proceed with your application at this time.</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     if st.button("Back to Start"):
         restart_process()
 
 # ----------------- STAGE 5: CONVERSATIONAL TECHNICAL INTERVIEW -----------------
 elif st.session_state.stage == "interview":
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="stage-title">Stage 3: Interactive Technical Interview</div>', unsafe_allow_html=True)
-    st.info("Respond to the Interview Agent. They will ask questions tailored to your resume skills.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="glass-card" style="margin-bottom: 20px;">
+        <div class="stage-title">Stage 3: Interactive Technical Interview</div>
+        <div style="color: #64748b; font-size: 0.95rem;">Respond to the Interview Agent. They will ask questions tailored to your resume skills.</div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Display Chat Bubbles using native interactive chat elements
+    # Display Chat Bubbles using custom HTML elements
+    chat_html = '<div class="chat-bubble-container">'
     for message in st.session_state.chat_history:
-        avatar_emoji = "🧑" if message["role"] == "user" else "🤖"
-        with st.chat_message(message["role"], avatar=avatar_emoji):
-            st.write(message["content"])
+        formatted_content = format_chat_text(message["content"])
+        if message["role"] == "user":
+            chat_html += f"""
+            <div class="chat-bubble chat-bubble-user">
+                <span class="chat-avatar">🧑</span> {formatted_content}
+            </div>
+            """
+        else:
+            chat_html += f"""
+            <div class="chat-bubble chat-bubble-assistant">
+                <span class="chat-avatar">🤖</span> {formatted_content}
+            </div>
+            """
+    chat_html += '</div>'
+    st.markdown(chat_html, unsafe_allow_html=True)
             
     # Replay button for manually reading the last question
     if st.session_state.chat_history and st.session_state.chat_history[-1]["role"] == "assistant":
@@ -1581,8 +1940,11 @@ elif st.session_state.stage == "interview":
 
 # ----------------- STAGE 6: FINAL EVALUATION SCREEN & EMAIL -----------------
 elif st.session_state.stage == "final_evaluation":
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="stage-title">Final Interview Assessment</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="glass-card" style="margin-bottom: 20px;">
+        <div class="stage-title">Final Interview Assessment</div>
+    </div>
+    """, unsafe_allow_html=True)
     
     eval_res = st.session_state.evaluation_result
     
@@ -1597,7 +1959,7 @@ elif st.session_state.stage == "final_evaluation":
         
         st.write("**Recruiter Internal Assessment:**")
         st.markdown(f"```\n{eval_res.overall_feedback}\n```")
-        st.markdown('</div>', unsafe_allow_html=True)
+        
         
         # Trigger Outbound Voice Call automatically in the background
         if not st.session_state.call_sent and st.session_state.candidate_phone:
@@ -1643,7 +2005,7 @@ elif st.session_state.stage == "final_evaluation":
         
         st.write("**Recruiter Internal Assessment:**")
         st.markdown(f"```\n{eval_res.overall_feedback}\n```")
-        st.markdown('</div>', unsafe_allow_html=True)
+        
 
     if st.button("Start New Assessment"):
         restart_process()
