@@ -24,14 +24,80 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
     
+    :root {
+        /* Colors */
+        --bg-gradient: linear-gradient(135deg, #fafafa 0%, #f4f4f5 55%, #e4e4e7 100%);
+        --text-main: #18181b;
+        --text-sub: #71717a;
+        --card-bg: #ffffff;
+        --card-border: #e4e4e7;
+        --sidebar-bg: #fafafa;
+        --sidebar-border: #e4e4e7;
+        --accent-red: #e50914;
+        --accent-red-hover: #b81d24;
+        --accent-gold: #f5c518;
+        --input-bg: #ffffff;
+        --input-border: #d4d4d8;
+        --input-text: #18181b;
+        --listbox-bg: #ffffff;
+        --listbox-option-hover: rgba(229, 9, 20, 0.08);
+        --jd-bg: #fafafa;
+        --tab-bg: #f4f4f5;
+        --tab-hover-bg: rgba(229, 9, 20, 0.05);
+        --tab-active-bg: #ffffff;
+        --bubble-assistant-bg: #ffffff;
+        --bubble-assistant-border: #e4e4e7;
+        --bubble-assistant-text: #18181b;
+        --stepper-before-bg: #e4e4e7;
+        --stepper-counter-bg: #ffffff;
+        --stepper-counter-border: #e4e4e7;
+        --stepper-counter-text: #71717a;
+        --card-hover-border: rgba(229, 9, 20, 0.2);
+        --badge-time-bg: #f1f5f9;
+        --badge-time-text: #475569;
+        --badge-red-bg: rgba(229, 9, 20, 0.08);
+    }
+    
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg-gradient: linear-gradient(135deg, #09090b 0%, #18181b 50%, #030303 100%);
+            --text-main: #f4f4f5;
+            --text-sub: #a1a1aa;
+            --card-bg: rgba(24, 24, 27, 0.65);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --sidebar-bg: #09090b;
+            --sidebar-border: rgba(255, 255, 255, 0.08);
+            --input-bg: rgba(20, 20, 25, 0.8);
+            --input-border: rgba(255, 255, 255, 0.12);
+            --input-text: #ffffff;
+            --listbox-bg: #18181b;
+            --listbox-option-hover: rgba(229, 9, 20, 0.15);
+            --jd-bg: rgba(24, 24, 27, 0.9);
+            --tab-bg: rgba(24, 24, 27, 0.8);
+            --tab-hover-bg: rgba(255, 255, 255, 0.05);
+            --tab-active-bg: rgba(255, 255, 255, 0.1);
+            --bubble-assistant-bg: rgba(39, 39, 42, 0.7);
+            --bubble-assistant-border: rgba(255, 255, 255, 0.08);
+            --bubble-assistant-text: #f4f4f5;
+            --stepper-before-bg: #27272a;
+            --stepper-counter-bg: #18181b;
+            --stepper-counter-border: #27272a;
+            --stepper-counter-text: #71717a;
+            --card-hover-border: rgba(229, 9, 20, 0.4);
+            --badge-time-bg: rgba(255, 255, 255, 0.08);
+            --badge-time-text: #d4d4d8;
+            --badge-red-bg: rgba(229, 9, 20, 0.15);
+        }
+    }
+    
     /* Global Styles */
     html, body, [class*="css"] {
         font-family: 'Outfit', sans-serif;
     }
     
     .stApp {
-        background: linear-gradient(135deg, #fff7ed 0%, #fafaf9 55%, #fef2f2 100%) !important;
-        color: #1e293b;
+        background: var(--bg-gradient) !important;
+        color: var(--text-main);
     }
     
     /* Center and constrain main content width for visual balance on wide monitors */
@@ -46,8 +112,8 @@ st.markdown("""
     
     /* Style sidebar with matching glassmorphic frame */
     section[data-testid="stSidebar"] {
-        background-color: #fafaf9 !important;
-        border-right: 1px solid rgba(253, 186, 116, 0.25) !important;
+        background-color: var(--sidebar-bg) !important;
+        border-right: var(--sidebar-border) !important;
     }
     
     /* Hide Streamlit Header, MainMenu, Footer, Toolbar */
@@ -86,13 +152,13 @@ st.markdown("""
 
     @keyframes pulseGlow {
         0% {
-            box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.2);
+            box-shadow: 0 0 0 0 rgba(229, 9, 20, 0.2);
         }
         70% {
-            box-shadow: 0 0 0 10px rgba(234, 88, 12, 0);
+            box-shadow: 0 0 0 10px rgba(229, 9, 20, 0);
         }
         100% {
-            box-shadow: 0 0 0 0 rgba(234, 88, 12, 0);
+            box-shadow: 0 0 0 0 rgba(229, 9, 20, 0);
         }
     }
     
@@ -100,7 +166,7 @@ st.markdown("""
     .recruit-header {
         font-size: 3rem;
         font-weight: 700;
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: center;
@@ -111,60 +177,62 @@ st.markdown("""
     
     .recruit-sub {
         font-size: 1.15rem;
-        color: #475569;
+        color: var(--text-sub);
         text-align: center;
         margin-bottom: 35px;
         font-weight: 400;
         animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
     
-    /* Card Glassmorphism in Warm Light Theme */
+    /* Card Glassmorphism */
     .glass-card {
-        background: #ffffff;
-        border: 1px solid #ffedd5;
+        background: var(--card-bg) !important;
+        border: 1px solid var(--card-border) !important;
         border-radius: 16px;
         padding: 30px;
-        box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.05), 0 8px 10px -6px rgba(249, 115, 22, 0.05);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
         margin-bottom: 30px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
         animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        backdrop-filter: blur(12px);
     }
     
     .glass-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 20px 30px -10px rgba(249, 115, 22, 0.08), 0 10px 15px -8px rgba(249, 115, 22, 0.08);
+        border-color: var(--card-hover-border) !important;
+        box-shadow: 0 15px 35px rgba(229, 9, 20, 0.08), 0 10px 30px rgba(0, 0, 0, 0.1);
     }
     
     .stage-title {
-        color: #1e293b;
+        color: var(--text-main);
         font-size: 1.45rem;
         font-weight: 600;
-        border-left: 5px solid #f97316;
+        border-left: 5px solid var(--accent-red);
         padding-left: 12px;
         margin-bottom: 25px;
     }
     
-    /* Global Form & Widget Light Customizations */
+    /* Global Form & Widget Customizations */
     div[data-baseweb="input"], div[data-baseweb="select"], textarea {
-        background-color: #ffffff !important;
-        color: #1e293b !important;
-        border: 1px solid #e2e8f0 !important;
+        background-color: var(--input-bg) !important;
+        color: var(--input-text) !important;
+        border: 1px solid var(--input-border) !important;
         border-radius: 10px !important;
         transition: all 0.3s ease !important;
     }
     
     div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within, textarea:focus {
-        border-color: #ea580c !important;
-        box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15) !important;
+        border-color: var(--accent-red) !important;
+        box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.2) !important;
     }
     
     div[data-baseweb="input"] input, textarea {
-        color: #1e293b !important;
+        color: var(--input-text) !important;
     }
     
     /* Labels */
     label, [data-testid="stWidgetLabel"] {
-        color: #334155 !important;
+        color: var(--text-main) !important;
         font-weight: 600 !important;
         font-size: 0.95rem !important;
         margin-bottom: 8px !important;
@@ -172,20 +240,20 @@ st.markdown("""
     
     /* Placeholders */
     ::placeholder {
-        color: #94a3b8 !important;
+        color: var(--text-sub) !important;
     }
     
     /* File Uploader styling */
     div[data-testid="stFileUploader"] {
-        background-color: #fffdfa !important;
-        border: 2px dashed #fdba74 !important;
+        background-color: var(--input-bg) !important;
+        border: 2px dashed var(--input-border) !important;
         border-radius: 14px;
         padding: 15px;
         transition: border-color 0.3s ease;
     }
     
     div[data-testid="stFileUploader"]:hover {
-        border-color: #ea580c !important;
+        border-color: var(--accent-red) !important;
     }
     
     div[data-testid="stFileUploader"] section {
@@ -194,30 +262,30 @@ st.markdown("""
     
     /* Selectbox Dropdown styling */
     div[role="listbox"] {
-        background-color: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
+        background-color: var(--listbox-bg) !important;
+        border: 1px solid var(--input-border) !important;
         border-radius: 10px;
     }
     
     div[role="option"] {
-        color: #1e293b !important;
-        background-color: #ffffff !important;
+        color: var(--input-text) !important;
+        background-color: var(--listbox-bg) !important;
         padding: 10px 15px !important;
     }
     
     div[role="option"]:hover, li[role="option"]:hover {
-        background-color: #ffedd5 !important;
-        color: #ea580c !important;
+        background-color: var(--listbox-option-hover) !important;
+        color: var(--text-main) !important;
     }
     
     /* Read-Only JD Container */
     .jd-container {
-        background-color: #fffaf4;
-        border: 1px solid #ffedd5;
+        background-color: var(--jd-bg);
+        border: 1px solid var(--card-border);
         border-radius: 10px;
         padding: 20px;
         font-size: 0.95rem;
-        color: #475569;
+        color: var(--text-sub);
         line-height: 1.6;
         margin-top: 5px;
         margin-bottom: 25px;
@@ -229,17 +297,17 @@ st.markdown("""
     /* Tabs Overrides */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
-        background-color: #f8fafc;
+        background-color: var(--tab-bg);
         padding: 6px;
         border-radius: 12px;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--card-border);
         margin-bottom: 20px;
     }
     
     .stTabs [data-baseweb="tab"] {
         background-color: transparent;
         border: none;
-        color: #64748b;
+        color: var(--text-sub);
         padding: 10px 20px;
         border-radius: 8px;
         font-weight: 600;
@@ -247,20 +315,20 @@ st.markdown("""
     }
     
     .stTabs [data-baseweb="tab"]:hover {
-        color: #ea580c;
-        background-color: #fff7ed;
+        color: var(--accent-red);
+        background-color: var(--tab-hover-bg);
     }
     
     .stTabs [aria-selected="true"] {
-        color: #ea580c !important;
-        background-color: #ffffff !important;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        color: var(--accent-red) !important;
+        background-color: var(--tab-active-bg) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
     
     /* Navigation Pills layout styling */
     div[data-testid="stRadio"] > div[role="radiogroup"] {
-        background: rgba(255, 255, 255, 0.7) !important;
-        border: 1px solid rgba(253, 186, 116, 0.4) !important;
+        background: var(--card-bg) !important;
+        border: 1px solid var(--card-border) !important;
         border-radius: 100px;
         padding: 8px !important;
         display: flex;
@@ -268,8 +336,8 @@ st.markdown("""
         justify-content: center;
         gap: 10px;
         margin-bottom: 35px;
-        backdrop-filter: blur(12px);
-        box-shadow: 0 10px 25px -10px rgba(249, 115, 22, 0.08);
+        backdrop-filter: blur(20px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
     }
     
     /* Hide the radio button circles visually by making them tiny and transparent */
@@ -288,7 +356,7 @@ st.markdown("""
         border: none !important;
         padding: 12px 36px !important;
         border-radius: 100px !important;
-        color: #475569 !important;
+        color: var(--text-sub) !important;
         font-weight: 600 !important;
         font-size: 1.05rem !important;
         cursor: pointer !important;
@@ -301,33 +369,33 @@ st.markdown("""
     
     /* Hover state */
     div[data-testid="stRadio"] label[data-baseweb="radio"]:hover {
-        color: #ea580c !important;
-        background-color: rgba(254, 215, 170, 0.2) !important;
+        color: var(--accent-red) !important;
+        background-color: var(--tab-hover-bg) !important;
     }
     
     /* Active/Checked state */
     div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {
         color: #ffffff !important;
-        background: linear-gradient(135deg, #f97316, #ea580c) !important;
-        box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25) !important;
+        background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover)) !important;
+        box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4) !important;
     }
     
     /* Custom buttons */
     .stButton>button {
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover));
         color: white;
         border: none;
         border-radius: 10px;
         padding: 12px 28px;
         font-weight: 600;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 6px -1px rgba(234, 88, 12, 0.15);
+        box-shadow: 0 4px 15px rgba(229, 9, 20, 0.25);
     }
     
     .stButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(234, 88, 12, 0.3);
-        background: linear-gradient(135deg, #ea580c, #c2410c);
+        box-shadow: 0 10px 20px rgba(229, 9, 20, 0.4);
+        background: linear-gradient(135deg, var(--accent-red-hover), #911217);
         color: white !important;
     }
     
@@ -347,7 +415,7 @@ st.markdown("""
         left: 0;
         right: 0;
         height: 4px;
-        background-color: #ffedd5;
+        background-color: var(--stepper-before-bg);
         z-index: 1;
     }
     .stepper-item {
@@ -362,19 +430,19 @@ st.markdown("""
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: #ffffff;
-        border: 2px solid #ffedd5;
+        background: var(--stepper-counter-bg);
+        border: 2px solid var(--stepper-counter-border);
         display: flex;
         justify-content: center;
         align-items: center;
         font-weight: 700;
-        color: #94a3b8;
+        color: var(--stepper-counter-text);
         transition: all 0.4s ease;
     }
     .step-name {
         font-size: 0.82rem;
         font-weight: 500;
-        color: #64748b;
+        color: var(--text-sub);
         margin-top: 8px;
         text-align: center;
         transition: all 0.4s ease;
@@ -387,19 +455,19 @@ st.markdown("""
         box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
     }
     .stepper-item.completed .step-name {
-        color: #059669;
+        color: #10b981;
         font-weight: 600;
     }
     /* Active state */
     .stepper-item.active .step-counter {
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover));
         color: white;
-        border-color: #ea580c;
-        box-shadow: 0 0 15px rgba(234, 88, 12, 0.35);
+        border-color: var(--accent-red);
+        box-shadow: 0 0 15px rgba(229, 9, 20, 0.4);
         transform: scale(1.08);
     }
     .stepper-item.active .step-name {
-        color: #ea580c;
+        color: var(--accent-red);
         font-weight: 700;
     }
     
@@ -421,18 +489,18 @@ st.markdown("""
     }
     .chat-bubble-assistant {
         align-self: flex-start;
-        background-color: #ffffff;
-        border: 1px solid #ffedd5;
-        color: #1e293b;
+        background-color: var(--bubble-assistant-bg);
+        border: 1px solid var(--bubble-assistant-border);
+        color: var(--bubble-assistant-text);
         border-bottom-left-radius: 4px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     }
     .chat-bubble-user {
         align-self: flex-end;
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover));
         color: #ffffff;
         border-bottom-right-radius: 4px;
-        box-shadow: 0 4px 10px rgba(234, 88, 12, 0.15);
+        box-shadow: 0 4px 15px rgba(229, 9, 20, 0.25);
     }
     .chat-avatar {
         font-size: 1.25rem;
@@ -448,11 +516,11 @@ st.markdown("""
         flex-wrap: wrap;
     }
     .metric-card {
-        background: #ffffff;
-        border: 1px solid #ffedd5;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
         border-radius: 12px;
         padding: 22px;
-        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.03);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
         display: flex;
         flex-direction: column;
         gap: 6px;
@@ -467,7 +535,7 @@ st.markdown("""
     .metric-val {
         font-size: 2.2rem;
         font-weight: 700;
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin: 0;
@@ -475,7 +543,7 @@ st.markdown("""
     .metric-label {
         font-size: 0.82rem;
         font-weight: 600;
-        color: #64748b;
+        color: var(--text-sub);
         text-transform: uppercase;
         letter-spacing: 0.8px;
     }
@@ -900,44 +968,44 @@ st.session_state.current_page = page
 if page == "📋 Open Positions":
     st.markdown("""
     <div class="glass-card" style="text-align: center; margin-bottom: 25px;">
-        <div class="recruit-header" style="font-size: 2.2rem; margin-bottom: 10px; background: linear-gradient(135deg, #f97316, #ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">💼 Explore Career Opportunities</div>
-        <div style="color: #64748b; font-size: 1.05rem;">Select a position below to view requirements and start your AI-guided assessment.</div>
+        <div class="recruit-header" style="font-size: 2.2rem; margin-bottom: 10px; background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">💼 Explore Career Opportunities</div>
+        <div style="color: var(--text-sub); font-size: 1.05rem;">Select a position below to view requirements and start your AI-guided assessment.</div>
     </div>
     """, unsafe_allow_html=True)
     
     # Platform highlights grid
     st.markdown("""
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 35px; animation: fadeInUp 0.6s ease both;">
-        <div class="glass-card" style="margin-bottom: 0; padding: 22px; border-top: 4px solid #f97316; display: flex; flex-direction: column; gap: 8px;">
-            <h4 style="color: #ea580c; margin: 0; display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.25rem;">📄</span> 1. AI Resume Check</h4>
-            <p style="color: #475569; font-size: 0.88rem; line-height: 1.5; margin: 0;">Our parser instantly extracts your core competencies and evaluates match score against candidate expectations.</p>
+        <div class="glass-card" style="margin-bottom: 0; padding: 22px; border-top: 4px solid var(--accent-red); display: flex; flex-direction: column; gap: 8px;">
+            <h4 style="color: var(--accent-red); margin: 0; display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.25rem;">📄</span> 1. AI Resume Check</h4>
+            <p style="color: var(--text-sub); font-size: 0.88rem; line-height: 1.5; margin: 0;">Our parser instantly extracts your core competencies and evaluates match score against candidate expectations.</p>
         </div>
         <div class="glass-card" style="margin-bottom: 0; padding: 22px; border-top: 4px solid #3b82f6; display: flex; flex-direction: column; gap: 8px;">
             <h4 style="color: #2563eb; margin: 0; display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.25rem;">🎯</span> 2. Custom MCQ</h4>
-            <p style="color: #475569; font-size: 0.88rem; line-height: 1.5; margin: 0;">Complete 5 technical MCQ screening questions dynamically customized for your background skills.</p>
+            <p style="color: var(--text-sub); font-size: 0.88rem; line-height: 1.5; margin: 0;">Complete 5 technical MCQ screening questions dynamically customized for your background skills.</p>
         </div>
         <div class="glass-card" style="margin-bottom: 0; padding: 22px; border-top: 4px solid #10b981; display: flex; flex-direction: column; gap: 8px;">
             <h4 style="color: #059669; margin: 0; display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.25rem;">🗣️</span> 3. Conversational AI</h4>
-            <p style="color: #475569; font-size: 0.88rem; line-height: 1.5; margin: 0;">Interact with our AI interviewer agent in a live dialogue with adaptive audio replay capabilities.</p>
+            <p style="color: var(--text-sub); font-size: 0.88rem; line-height: 1.5; margin: 0;">Interact with our AI interviewer agent in a live dialogue with adaptive audio replay capabilities.</p>
         </div>
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown('<h3 style="color: #1e293b; font-weight: 700; margin-bottom: 20px; font-size: 1.5rem;">🔥 Open Job Positions</h3>', unsafe_allow_html=True)
+    st.markdown('<h3 style="color: var(--text-main); font-weight: 700; margin-bottom: 20px; font-size: 1.5rem;">🔥 Open Job Positions</h3>', unsafe_allow_html=True)
     
     for role, jd in PREDEFINED_JDS.items():
         if role != "Custom / Write your own":
             job_diff = JOB_DIFFICULTIES.get(role, "Medium")
             st.markdown(f"""
-            <div class="glass-card" style="border-left: 6px solid #ea580c; padding: 25px; margin-bottom: 15px;">
+            <div class="glass-card" style="border-left: 6px solid var(--accent-red); padding: 25px; margin-bottom: 15px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                    <h3 style="color: #1e293b; margin: 0; font-size: 1.35rem; font-weight: 700;">{role}</h3>
+                    <h3 style="color: var(--text-main); margin: 0; font-size: 1.35rem; font-weight: 700;">{role}</h3>
                     <div style="display: flex; gap: 8px;">
-                        <span style="background-color: #ffedd5; color: #ea580c; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">{job_diff} Level</span>
-                        <span style="background-color: #f1f5f9; color: #475569; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Full-Time</span>
+                        <span style="background-color: var(--badge-red-bg); color: var(--accent-red); padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">{job_diff} Level</span>
+                        <span style="background-color: var(--badge-time-bg); color: var(--badge-time-text); padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Full-Time</span>
                     </div>
                 </div>
-                <div style="color: #475569; line-height: 1.6; font-size: 0.95rem; margin-bottom: 5px; white-space: pre-wrap;">{jd}</div>
+                <div style="color: var(--text-sub); line-height: 1.6; font-size: 0.95rem; margin-bottom: 5px; white-space: pre-wrap;">{jd}</div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -1148,7 +1216,7 @@ elif page == "🔒 Recruiter Portal":
                     break
             
             if matched_candidate:
-                st.markdown(f'<div class="glass-card" style="border-left: 5px solid #f97316; padding: 20px;">', unsafe_allow_html=True)
+                st.markdown(f'<div class="glass-card" style="border-left: 5px solid var(--accent-red); padding: 20px;">', unsafe_allow_html=True)
                 st.markdown(f"### Scorecard: {matched_candidate['name']}")
                 
                 # Visual Match Score Progress Bar
@@ -1259,19 +1327,19 @@ elif page == "🔒 Recruiter Portal":
                     st.markdown(f"""
                     <div class="glass-card" style="border-left: 6px solid {severity_color}; padding: 20px; margin-bottom: 15px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h4 style="margin: 0; color: #1e293b;">{t.get('name')} ({t.get('email')})</h4>
+                            <h4 style="margin: 0; color: var(--text-main);">{t.get('name')} ({t.get('email')})</h4>
                             <span style="background-color: {severity_color}20; color: {severity_color}; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">{t.get('severity', 'Medium')} Priority</span>
                         </div>
-                        <div style="font-size: 0.95rem; margin-bottom: 12px; color: #475569; line-height: 1.5;">
+                        <div style="font-size: 0.95rem; margin-bottom: 12px; color: var(--text-sub); line-height: 1.5;">
                             <strong>Target Role:</strong> {t.get('job_role')}<br>
                             <strong>Timestamp:</strong> {t.get('timestamp')}<br>
                             <strong>Candidate's Description:</strong> <em>"{t.get('message')}"</em>
                         </div>
-                        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                            <strong style="color: #0f172a; font-size: 0.95rem;">🤖 AI Support Agent Diagnosis:</strong><br>
-                            <p style="margin-top: 5px; margin-bottom: 5px; font-size: 0.95rem; color: #334155;">{t.get('diagnosis')}</p>
-                            <strong>Suggested Action:</strong> <span style="color: #ea580c;">{t.get('suggested_action')}</span><br>
-                            <strong>Justification:</strong> <span style="color: #64748b; font-style: italic;">{t.get('justification')}</span>
+                        <div style="background-color: var(--jd-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                            <strong style="color: var(--text-main); font-size: 0.95rem;">🤖 AI Support Agent Diagnosis:</strong><br>
+                            <p style="margin-top: 5px; margin-bottom: 5px; font-size: 0.95rem; color: var(--text-sub);">{t.get('diagnosis')}</p>
+                            <strong>Suggested Action:</strong> <span style="color: var(--accent-gold);">{t.get('suggested_action')}</span><br>
+                            <strong>Justification:</strong> <span style="color: var(--text-sub); font-style: italic;">{t.get('justification')}</span>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -1323,17 +1391,17 @@ elif page == "🔒 Recruiter Portal":
                     st.markdown(f"""
                     <div class="glass-card" style="border-left: 6px solid #10b981; padding: 20px; margin-bottom: 15px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h4 style="margin: 0; color: #1e293b;">{t.get('name')} ({t.get('email')})</h4>
-                            <span style="background-color: #dcfce7; color: #166534; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Auto-Resolved</span>
+                            <h4 style="margin: 0; color: var(--text-main);">{t.get('name')} ({t.get('email')})</h4>
+                            <span style="background-color: rgba(16, 185, 129, 0.1); color: #10b981; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Auto-Resolved</span>
                         </div>
-                        <div style="font-size: 0.95rem; margin-bottom: 12px; color: #475569; line-height: 1.5;">
+                        <div style="font-size: 0.95rem; margin-bottom: 12px; color: var(--text-sub); line-height: 1.5;">
                             <strong>Applied Role:</strong> {t.get('job_role')}<br>
                             <strong>Date Resolved:</strong> {t.get('timestamp')}<br>
                             <strong>Issue Reported:</strong> <em>"{t.get('message')}"</em>
                         </div>
-                        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px;">
-                            <strong style="color: #166534; font-size: 0.95rem;">🤖 AI Justification & Action:</strong><br>
-                            <p style="margin-top: 5px; margin-bottom: 5px; font-size: 0.95rem; color: #1e293b;">{t.get('resolution_log')}</p>
+                        <div style="background-color: rgba(16, 185, 129, 0.05); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
+                            <strong style="color: #10b981; font-size: 0.95rem;">🤖 AI Justification & Action:</strong><br>
+                            <p style="margin-top: 5px; margin-bottom: 5px; font-size: 0.95rem; color: var(--text-sub);">{t.get('resolution_log')}</p>
                             <strong>Confidence Score:</strong> <code>{int(t.get('confidence_score', 0.0) * 100)}%</code>
                         </div>
                     </div>
@@ -1414,27 +1482,27 @@ if st.session_state.stage == "upload":
         st.markdown(f"""
         <div class="glass-card" style="border-left: 6px solid #ef4444; padding: 25px;">
             <h3 style="color: #ef4444; margin-top: 0; font-weight: 700; font-size: 1.45rem;">⚠️ Assessment Already Attempted</h3>
-            <p style="color: #475569; font-size: 0.95rem; line-height: 1.6;">
+            <p style="color: var(--text-sub); font-size: 0.95rem; line-height: 1.6;">
                 Our records show that a candidate with the email <strong>{dup.get('email')}</strong> has already registered or completed an assessment.
             </p>
-            <div style="background-color: #fdf2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px; margin: 20px 0; color: #1f2937;">
-                <strong style="color: #b91c1c; font-size: 1rem;">Previous Application Summary:</strong><br>
+            <div style="background-color: var(--badge-red-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; margin: 20px 0; color: var(--text-main);">
+                <strong style="color: #ef4444; font-size: 1rem;">Previous Application Summary:</strong><br>
                 <div style="margin-top: 10px; font-size: 0.95rem; line-height: 1.8;">
                     • <strong>Candidate Name:</strong> {dup.get('name')}<br>
                     • <strong>Target Role:</strong> {dup.get('job_role')}<br>
-                    • <strong>Pipeline Stage:</strong> <span style="background-color: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;">{dup.get('status')}</span><br>
+                    • <strong>Pipeline Stage:</strong> <span style="background-color: var(--badge-red-bg); color: #ef4444; padding: 2px 8px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;">{dup.get('status')}</span><br>
                     • <strong>Date Submitted:</strong> {dup.get('timestamp')}
                 </div>
             </div>
-            <p style="font-size: 0.95rem; color: #475569; line-height: 1.5; margin-bottom: 0;">
+            <p style="font-size: 0.95rem; color: var(--text-sub); line-height: 1.5; margin-bottom: 0;">
                 To ensure a fair evaluation process, multiple attempts are not permitted. If you encountered technical difficulties, please connect with your recruiter for better understanding or to request an assessment reset.
             </p>
         </div>
         """, unsafe_allow_html=True)
         
         # Report form section
-        st.markdown('<div class="glass-card" style="margin-top: 15px; border-left: 5px solid #f97316;">', unsafe_allow_html=True)
-        st.markdown('<h4 style="margin-top: 0; color: #1e293b;">🛠️ Having Technical Issues or Need a Retake?</h4>', unsafe_allow_html=True)
+        st.markdown('<div class="glass-card" style="margin-top: 15px; border-left: 5px solid var(--accent-red);">', unsafe_allow_html=True)
+        st.markdown('<h4 style="margin-top: 0; color: var(--text-main);">🛠️ Having Technical Issues or Need a Retake?</h4>', unsafe_allow_html=True)
         st.write("Describe what issue you faced (e.g. system crashed, internet disconnected, audio issues). The AI Support Agent will diagnose your request and notify the recruiter.")
         
         with st.form("support_request_form"):
