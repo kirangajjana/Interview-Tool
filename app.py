@@ -265,9 +265,35 @@ st.markdown("""
         box-shadow: 0 10px 20px rgba(234, 88, 12, 0.3);
         background: linear-gradient(135deg, #ea580c, #c2410c);
         color: white !important;
-    }
 </style>
 """, unsafe_allow_html=True)
+
+# Inject Global Enter Key Interceptor JavaScript to move focus to next input field instead of reloading page
+st.components.v1.html("""
+<script>
+    const doc = window.parent.document;
+    if (!window.parent.__enter_interceptor_added__) {
+        window.parent.__enter_interceptor_added__ = true;
+        doc.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const active = doc.activeElement;
+                if (active && active.tagName === 'INPUT' && active.type !== 'submit' && active.type !== 'button') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const selector = 'input[type="text"]:not([readonly]), input[type="email"]:not([readonly]), input[type="tel"]:not([readonly]), select, textarea:not([readonly])';
+                    const elements = Array.from(doc.querySelectorAll(selector)).filter(el => {
+                        return el.offsetWidth > 0 && el.offsetHeight > 0;
+                    });
+                    const index = elements.indexOf(active);
+                    if (index > -1 && index < elements.length - 1) {
+                        elements[index + 1].focus();
+                    }
+                }
+            }
+        }, true);
+    }
+</script>
+""", height=0)
 
 JOBS_FILE = "src/jobs.json"
 
