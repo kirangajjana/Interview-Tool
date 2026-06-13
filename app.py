@@ -8,6 +8,8 @@ from src.agents.screening_agent import ScreeningAgent
 from src.agents.mcq_agent import MCQAgent
 from src.agents.interview_agent import InterviewAgent
 from src.agents.email_agent import EmailAgent
+from src.agents.support_agent import SupportAgent
+from src.agents.repeat_agent import RepeatAgent
 
 # Set page configurations
 st.set_page_config(
@@ -299,6 +301,37 @@ def load_candidates():
     except Exception as e:
         return []
 
+def check_duplicate_candidate(email):
+    email = email.strip().lower()
+    if not email:
+        return None
+    records = load_candidates()
+    for rec in records:
+        if rec.get("email", "").strip().lower() == email:
+            if rec.get("allowed_retake") is True:
+                return None
+            return rec
+    return None
+
+ISSUES_FILE = "src/issues.json"
+
+def load_issues():
+    if not os.path.exists(ISSUES_FILE):
+        return []
+    try:
+        with open(ISSUES_FILE, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        return []
+
+def save_issues(issues):
+    try:
+        with open(ISSUES_FILE, "w") as f:
+            json.dump(issues, f, indent=2)
+        return True
+    except Exception as e:
+        return False
+
 def log_candidate_state(status_override=None):
     name = st.session_state.get("candidate_name", "").strip()
     email = st.session_state.get("candidate_email", "").strip()
@@ -369,11 +402,14 @@ def log_candidate_state(status_override=None):
         records = load_candidates()
         updated = False
         for idx, rec in enumerate(records):
-            if rec.get("email") == email and rec.get("job_role") == role:
+            if rec.get("email", "").strip().lower() == email.strip().lower():
+                is_new_registration = (stage == "upload" or status == "Profile Uploaded")
+                candidate_data["allowed_retake"] = False if is_new_registration else rec.get("allowed_retake", False)
                 records[idx] = candidate_data
                 updated = True
                 break
         if not updated:
+            candidate_data["allowed_retake"] = False
             records.append(candidate_data)
             
         with open(CANDIDATES_FILE, "w") as f:
@@ -601,10 +637,20 @@ elif page == "🔒 Recruiter Portal":
     st.markdown('<div class="stage-title">🔒 Recruiter Portal</div>', unsafe_allow_html=True)
     
     st.write("Hello Recruiter! Welcome to your administrative control center.")
+    
+    # Notify recruiter of auto-resolved support tickets
+    try:
+        tickets_db = load_issues()
+        auto_resolved = [t for t in tickets_db if t.get("resolved") and t.get("resolved_by") == "AI Auto-Resolver"]
+        if auto_resolved:
+            st.info(f"🤖 **AI Auto-Resolver Notification**: The AI agent has successfully resolved **{len(auto_resolved)}** candidate issue(s) automatically. You can review resolution logs under the **Support & Help Requests** tab.")
+    except Exception:
+        pass
+
     st.markdown("---")
     
     # Recruiter Portal Tabs
-    portal_tab1, portal_tab2 = st.tabs(["💼 Job Management & AI Assistant", "🧑 Candidate Assessments Hub"])
+    portal_tab1, portal_tab2, portal_tab3 = st.tabs(["💼 Job Management & AI Assistant", "🧑 Candidate Assessments Hub", "⚠️ Support & Help Requests"])
     
     with portal_tab1:
         st.subheader("Current Active Roles")
@@ -820,9 +866,128 @@ elif page == "🔒 Recruiter Portal":
                 if matched_candidate.get("summary"):
                     st.markdown("**Hiring Committee Summary:**")
                     st.success(matched_candidate["summary"])
+                
+                st.write("---")
+                st.write("#### ⚙️ Administrative Actions")
+                allowed_retake = matched_candidate.get("allowed_retake", False)
+                if allowed_retake:
+                    st.success("Retake has already been enabled for this candidate.")
+                else:
+                    if st.button("🔓 Enable Retake / Reset Access", key=f"reset_btn_{matched_candidate['email']}"):
+                        records = load_candidates()
+                        for r in records:
+                            if r.get("email", "").strip().lower() == matched_candidate["email"].strip().lower():
+                                r["allowed_retake"] = True
+                                r["status"] = "Retake Allowed"
+                                break
+                        with open(CANDIDATES_FILE, "w") as f:
+                            json.dump(records, f, indent=2)
+                        st.success(f"Access reset successful! {matched_candidate['name']} can now register and retake the test.")
+                        time.sleep(1)
+                        st.rerun()
                     
                 st.markdown('</div>', unsafe_allow_html=True)
                         
+    with portal_tab3:
+        st.subheader("⚠️ Support Requests & AI Diagnoses")
+        tickets = load_issues()
+        
+        # Split tickets
+        pending_tickets = [t for t in tickets if not t.get("resolved", False)]
+        auto_resolved_tickets = [t for t in tickets if t.get("resolved", False) and t.get("resolved_by") == "AI Auto-Resolver"]
+        
+        # Sub-tabs for support center
+        support_sub1, support_sub2 = st.tabs(["📥 Pending Recruiter Review", "🤖 AI Auto-Resolved History"])
+        
+        with support_sub1:
+            if not pending_tickets:
+                st.success("No active candidate support requests! All clear.")
+            else:
+                for idx, t in enumerate(pending_tickets):
+                    severity_color = "#3b82f6" if t.get("severity") == "Low" else ("#f59e0b" if t.get("severity") == "Medium" else "#ef4444")
+                    st.markdown(f"""
+                    <div class="glass-card" style="border-left: 6px solid {severity_color}; padding: 20px; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="margin: 0; color: #1e293b;">{t.get('name')} ({t.get('email')})</h4>
+                            <span style="background-color: {severity_color}20; color: {severity_color}; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">{t.get('severity', 'Medium')} Priority</span>
+                        </div>
+                        <div style="font-size: 0.95rem; margin-bottom: 12px; color: #475569; line-height: 1.5;">
+                            <strong>Target Role:</strong> {t.get('job_role')}<br>
+                            <strong>Timestamp:</strong> {t.get('timestamp')}<br>
+                            <strong>Candidate's Description:</strong> <em>"{t.get('message')}"</em>
+                        </div>
+                        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                            <strong style="color: #0f172a; font-size: 0.95rem;">🤖 AI Support Agent Diagnosis:</strong><br>
+                            <p style="margin-top: 5px; margin-bottom: 5px; font-size: 0.95rem; color: #334155;">{t.get('diagnosis')}</p>
+                            <strong>Suggested Action:</strong> <span style="color: #ea580c;">{t.get('suggested_action')}</span><br>
+                            <strong>Justification:</strong> <span style="color: #64748b; font-style: italic;">{t.get('justification')}</span>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Action Buttons
+                    col1, col2, col3 = st.columns([3, 2, 5])
+                    with col1:
+                        if st.button("🔓 Resolve & Allow Retake", key=f"resolve_retake_{idx}_{t.get('email')}", use_container_width=True):
+                            # Grant Retake
+                            records = load_candidates()
+                            for r in records:
+                                if r.get("email", "").strip().lower() == t.get("email", "").strip().lower():
+                                    r["allowed_retake"] = True
+                                    r["status"] = "Retake Allowed"
+                                    break
+                            with open(CANDIDATES_FILE, "w") as f:
+                                json.dump(records, f, indent=2)
+                            
+                            # Mark ticket as resolved
+                            for tk in tickets:
+                                if tk.get("email", "").strip().lower() == t.get("email", "").strip().lower() and not tk.get("resolved", False):
+                                    tk["resolved"] = True
+                                    tk["resolved_by"] = "Recruiter"
+                                    break
+                            save_issues(tickets)
+                            st.success(f"Access granted and request resolved for {t.get('name')}!")
+                            time.sleep(1)
+                            st.rerun()
+                            
+                    with col2:
+                        if st.button("Dismiss", key=f"dismiss_ticket_{idx}_{t.get('email')}", use_container_width=True):
+                            # Mark ticket as resolved
+                            for tk in tickets:
+                                if tk.get("email", "").strip().lower() == t.get("email", "").strip().lower() and not tk.get("resolved", False):
+                                    tk["resolved"] = True
+                                    tk["resolved_by"] = "Recruiter Dismissal"
+                                    break
+                            save_issues(tickets)
+                            st.info("Help request dismissed.")
+                            time.sleep(1)
+                            st.rerun()
+                    st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
+                    
+        with support_sub2:
+            if not auto_resolved_tickets:
+                st.info("No tickets have been auto-resolved by the AI Support Agent yet.")
+            else:
+                for idx, t in enumerate(auto_resolved_tickets):
+                    st.markdown(f"""
+                    <div class="glass-card" style="border-left: 6px solid #10b981; padding: 20px; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="margin: 0; color: #1e293b;">{t.get('name')} ({t.get('email')})</h4>
+                            <span style="background-color: #dcfce7; color: #166534; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Auto-Resolved</span>
+                        </div>
+                        <div style="font-size: 0.95rem; margin-bottom: 12px; color: #475569; line-height: 1.5;">
+                            <strong>Applied Role:</strong> {t.get('job_role')}<br>
+                            <strong>Date Resolved:</strong> {t.get('timestamp')}<br>
+                            <strong>Issue Reported:</strong> <em>"{t.get('message')}"</em>
+                        </div>
+                        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px;">
+                            <strong style="color: #166534; font-size: 0.95rem;">🤖 AI Justification & Action:</strong><br>
+                            <p style="margin-top: 5px; margin-bottom: 5px; font-size: 0.95rem; color: #1e293b;">{t.get('resolution_log')}</p>
+                            <strong>Confidence Score:</strong> <code>{int(t.get('confidence_score', 0.0) * 100)}%</code>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
     st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
@@ -841,6 +1006,184 @@ def restart_process():
 
 # ----------------- STAGE 1: REGISTRATION AND RESUME UPLOAD -----------------
 if st.session_state.stage == "upload":
+    if st.session_state.get("support_resolved_message"):
+        msg = st.session_state.get("support_resolved_message")
+        st.markdown(f"""
+        <div class="glass-card" style="border-left: 6px solid #10b981; padding: 25px; text-align: center;">
+            <div style="font-size: 3rem; margin-bottom: 15px;">🎉</div>
+            <h3 style="color: #10b981; margin-top: 0; font-weight: 700; font-size: 1.45rem;">Access Reset Successfully</h3>
+            <p style="color: #475569; font-size: 0.95rem; line-height: 1.6;">
+                The AI Auto-Resolver has processed and approved your support request:
+            </p>
+            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: left; color: #1e293b;">
+                <strong>🤖 AI Support Agent:</strong><br>
+                <p style="margin-top: 8px; margin-bottom: 0; font-style: italic; line-height: 1.5;">"{msg}"</p>
+            </div>
+            <p style="font-size: 0.9rem; color: #64748b; line-height: 1.5;">
+                You can now register again and retake your test immediately.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Proceed to Re-apply / Retake"):
+            del st.session_state.support_resolved_message
+            st.session_state.duplicate_blocked = False
+            st.session_state.duplicate_candidate = None
+            st.rerun()
+        st.stop()
+
+    if st.session_state.get("support_pending_message"):
+        msg = st.session_state.get("support_pending_message")
+        st.markdown(f"""
+        <div class="glass-card" style="border-left: 6px solid #f59e0b; padding: 25px; text-align: center;">
+            <div style="font-size: 3rem; margin-bottom: 15px;">📥</div>
+            <h3 style="color: #f59e0b; margin-top: 0; font-weight: 700; font-size: 1.45rem;">Support Request Submitted</h3>
+            <p style="color: #475569; font-size: 0.95rem; line-height: 1.6;">
+                Your support request has been logged and queued for recruiter review:
+            </p>
+            <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: left; color: #1e293b;">
+                <strong>🤖 AI Support Agent:</strong><br>
+                <p style="margin-top: 8px; margin-bottom: 0; font-style: italic; line-height: 1.5;">"{msg}"</p>
+            </div>
+            <p style="font-size: 0.9rem; color: #64748b; line-height: 1.5;">
+                A human coordinator will review your request shortly. You will be notified once a decision is made.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Go Back to Form"):
+            del st.session_state.support_pending_message
+            st.session_state.duplicate_blocked = False
+            st.session_state.duplicate_candidate = None
+            st.rerun()
+        st.stop()
+
+    if st.session_state.get("duplicate_blocked"):
+        dup = st.session_state.get("duplicate_candidate", {})
+        st.markdown(f"""
+        <div class="glass-card" style="border-left: 6px solid #ef4444; padding: 25px;">
+            <h3 style="color: #ef4444; margin-top: 0; font-weight: 700; font-size: 1.45rem;">⚠️ Assessment Already Attempted</h3>
+            <p style="color: #475569; font-size: 0.95rem; line-height: 1.6;">
+                Our records show that a candidate with the email <strong>{dup.get('email')}</strong> has already registered or completed an assessment.
+            </p>
+            <div style="background-color: #fdf2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px; margin: 20px 0; color: #1f2937;">
+                <strong style="color: #b91c1c; font-size: 1rem;">Previous Application Summary:</strong><br>
+                <div style="margin-top: 10px; font-size: 0.95rem; line-height: 1.8;">
+                    • <strong>Candidate Name:</strong> {dup.get('name')}<br>
+                    • <strong>Target Role:</strong> {dup.get('job_role')}<br>
+                    • <strong>Pipeline Stage:</strong> <span style="background-color: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;">{dup.get('status')}</span><br>
+                    • <strong>Date Submitted:</strong> {dup.get('timestamp')}
+                </div>
+            </div>
+            <p style="font-size: 0.95rem; color: #475569; line-height: 1.5; margin-bottom: 0;">
+                To ensure a fair evaluation process, multiple attempts are not permitted. If you encountered technical difficulties, please connect with your recruiter for better understanding or to request an assessment reset.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Report form section
+        st.markdown('<div class="glass-card" style="margin-top: 15px; border-left: 5px solid #f97316;">', unsafe_allow_html=True)
+        st.markdown('<h4 style="margin-top: 0; color: #1e293b;">🛠️ Having Technical Issues or Need a Retake?</h4>', unsafe_allow_html=True)
+        st.write("Describe what issue you faced (e.g. system crashed, internet disconnected, audio issues). The AI Support Agent will diagnose your request and notify the recruiter.")
+        
+        with st.form("support_request_form"):
+            reported_msg = st.text_area("Detail your issue here...", placeholder="Explain exactly what happened, and why you need to retake the assessment...", height=120)
+            submit_ticket = st.form_submit_button("Submit Help Request")
+            
+            if submit_ticket:
+                if not reported_msg.strip():
+                    st.error("Please enter a description of the issue before submitting.")
+                else:
+                    with st.spinner("AI Support Agent is diagnosing the issue..."):
+                        try:
+                            support_agent = SupportAgent()
+                            diagnosis_res = support_agent.run(
+                                candidate_email=dup.get('email'),
+                                reported_message=reported_msg.strip(),
+                                candidate_history=dup
+                            )
+                            
+                            # Log issue ticket
+                            import datetime
+                            is_auto_resolved = getattr(diagnosis_res, "auto_resolve_eligible", False)
+                            cand_notif = getattr(diagnosis_res, "candidate_notification", "Your request is under review.")
+                            
+                            new_ticket = {
+                                "email": dup.get('email'),
+                                "name": dup.get('name'),
+                                "job_role": dup.get('job_role'),
+                                "message": reported_msg.strip(),
+                                "diagnosis": diagnosis_res.diagnosis,
+                                "severity": diagnosis_res.severity,
+                                "suggested_action": diagnosis_res.suggested_action,
+                                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "resolved": is_auto_resolved,
+                                "resolved_by": "AI Auto-Resolver" if is_auto_resolved else "Pending Review",
+                                "justification": getattr(diagnosis_res, "justification", ""),
+                                "confidence_score": getattr(diagnosis_res, "confidence_score", 0.0),
+                                "resolution_log": f"Auto-approved reset. Justification: {getattr(diagnosis_res, 'justification', '')}" if is_auto_resolved else "",
+                                "candidate_notification": cand_notif
+                            }
+                            
+                            if is_auto_resolved:
+                                # Update candidate database entry
+                                records = load_candidates()
+                                for r in records:
+                                    if r.get("email", "").strip().lower() == dup.get('email', "").strip().lower():
+                                        r["allowed_retake"] = True
+                                        r["status"] = "Retake Allowed"
+                                        break
+                                try:
+                                    with open(CANDIDATES_FILE, "w") as f:
+                                        json.dump(records, f, indent=2)
+                                except Exception:
+                                    pass
+                            
+                            tickets = load_issues()
+                            # Replace if there's already an active ticket for this email
+                            updated = False
+                            for idx, t in enumerate(tickets):
+                                if t.get("email", "").strip().lower() == dup.get('email', "").strip().lower() and not t.get("resolved", False):
+                                    tickets[idx] = new_ticket
+                                    updated = True
+                                    break
+                            if not updated:
+                                tickets.append(new_ticket)
+                                
+                            save_issues(tickets)
+                            
+                            if is_auto_resolved:
+                                st.session_state.support_resolved_message = cand_notif
+                            else:
+                                st.session_state.support_pending_message = cand_notif
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Support Agent error: {str(e)}")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        if st.button("← Go Back to Form"):
+            st.session_state.duplicate_blocked = False
+            st.session_state.duplicate_candidate = None
+            st.rerun()
+        st.stop()
+
+    # Render persistent support notifications if candidate email matches a resolved ticket
+    active_email = st.session_state.get("candidate_email_val", "").strip().lower()
+    if active_email:
+        tickets = load_issues()
+        resolved_tickets = [t for t in tickets if t.get("email", "").strip().lower() == active_email and t.get("resolved", False)]
+        if resolved_tickets:
+            latest_ticket = resolved_tickets[-1]
+            st.markdown(f"""
+            <div class="glass-card" style="border-left: 6px solid #10b981; padding: 20px; margin-bottom: 25px; background-color: #f0fdf4;">
+                <h5 style="margin: 0 0 8px 0; color: #166534; font-size: 1.1rem; font-weight: 700;">🔔 Helpdesk Update</h5>
+                <p style="margin: 0; color: #1e293b; font-size: 0.95rem; line-height: 1.5;">
+                    {latest_ticket.get('candidate_notification', latest_ticket.get('resolution_log'))}
+                </p>
+                <div style="font-size: 0.8rem; color: #64748b; margin-top: 8px;">
+                    Resolved on: {latest_ticket.get('timestamp')}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown('<div class="stage-title">Candidate Profile & Resume Upload</div>', unsafe_allow_html=True)
     
@@ -875,6 +1218,26 @@ if st.session_state.stage == "upload":
         elif not uploaded_file:
             st.error("Please upload your resume in PDF format.")
         else:
+            # Check duplicate candidate
+            duplicate_record = check_duplicate_candidate(candidate_email)
+            if duplicate_record:
+                st.session_state.duplicate_candidate = duplicate_record
+                st.session_state.duplicate_blocked = True
+                st.rerun()
+            
+            # Consume retake allowance if they had one enabled
+            records = load_candidates()
+            for r in records:
+                if r.get("email", "").strip().lower() == candidate_email.strip().lower():
+                    if r.get("allowed_retake") is True:
+                        r["allowed_retake"] = False
+                        try:
+                            with open(CANDIDATES_FILE, "w") as f:
+                                json.dump(records, f, indent=2)
+                        except Exception:
+                            pass
+                        break
+                
             with st.spinner("Extracting text from resume..."):
                 try:
                     resume_text = ResumeParser.extract_text(uploaded_file)
@@ -1031,7 +1394,15 @@ elif st.session_state.stage == "interview":
         avatar_emoji = "🧑" if message["role"] == "user" else "🤖"
         with st.chat_message(message["role"], avatar=avatar_emoji):
             st.write(message["content"])
-        
+            
+    # Replay button for manually reading the last question
+    if st.session_state.chat_history and st.session_state.chat_history[-1]["role"] == "assistant":
+        col_rep1, col_rep2 = st.columns([3, 7])
+        with col_rep1:
+            if st.button("🔊 Replay Question", use_container_width=True):
+                st.session_state.last_spoken_message = ""
+                st.rerun()
+                
     st.write("---")
     
     # Chat Input
@@ -1095,8 +1466,29 @@ elif st.session_state.stage == "interview":
         
         # If the last message was a user response, we invoke the agent
         if st.session_state.chat_history[-1]["role"] == "user":
-            with st.spinner("Interviewer is reviewing your answer and preparing the next question..."):
+            user_response_text = st.session_state.chat_history[-1]["content"]
+            with st.spinner("Interviewer is reviewing your answer..."):
                 try:
+                    # Find last assistant question
+                    last_assistant_msg = ""
+                    for msg in reversed(st.session_state.chat_history[:-1]):
+                        if msg["role"] == "assistant":
+                            last_assistant_msg = msg["content"]
+                            break
+                            
+                    repeat_agent = RepeatAgent()
+                    clarification = repeat_agent.run(
+                        candidate_message=user_response_text,
+                        last_question=last_assistant_msg
+                    )
+                    
+                    if clarification.is_clarification_request:
+                        st.session_state.chat_history.append({
+                            "role": "assistant",
+                            "content": clarification.clarified_response
+                        })
+                        st.rerun()
+                        
                     interview_agent = InterviewAgent()
                     # We pass the history (excluding the very first welcoming greeting in the count)
                     # We ask 3 total questions (excluding welcome)
@@ -1136,6 +1528,30 @@ elif st.session_state.stage == "interview":
                     st.rerun()
                 except Exception as e:
                     st.error(f"Error during final evaluation: {str(e)}")
+
+    # Speech synthesis logic - run once per unique assistant message
+    if "last_spoken_message" not in st.session_state:
+        st.session_state.last_spoken_message = ""
+        
+    if st.session_state.chat_history and st.session_state.chat_history[-1]["role"] == "assistant":
+        last_msg = st.session_state.chat_history[-1]["content"]
+        if st.session_state.last_spoken_message != last_msg:
+            # Clean formatting for JS string
+            clean_msg = last_msg.replace('**', '').replace('*', '').replace('`', '').replace('"', '\\"').replace('\n', ' ')
+            st.components.v1.html(f"""
+            <script>
+                if ('speechSynthesis' in window) {{
+                    window.parent.speechSynthesis.cancel();
+                    var utterance = new SpeechSynthesisUtterance("{clean_msg}");
+                    utterance.rate = 1.05;
+                    var voices = window.parent.speechSynthesis.getVoices();
+                    var engVoice = voices.find(v => v.lang.startsWith('en'));
+                    if (engVoice) utterance.voice = engVoice;
+                    window.parent.speechSynthesis.speak(utterance);
+                }}
+            </script>
+            """, height=0)
+            st.session_state.last_spoken_message = last_msg
 
 # ----------------- STAGE 6: FINAL EVALUATION SCREEN & EMAIL -----------------
 elif st.session_state.stage == "final_evaluation":
@@ -1205,3 +1621,89 @@ elif st.session_state.stage == "final_evaluation":
 
     if st.button("Start New Assessment"):
         restart_process()
+
+# Collapsible help request expander for active test stages
+if st.session_state.stage != "upload":
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    with st.expander("🚨 Facing technical issues during the test? Report to Recruiter"):
+        st.write("If you face any issues (e.g., page froze, microphone failed, transcription error), detail it below. The AI Support Agent will diagnose it and alert the recruiter.")
+        with st.form("stage_support_form"):
+            issue_desc = st.text_area("What issue are you facing?", placeholder="Detail the technical problem here...", height=100)
+            submit_stage_ticket = st.form_submit_button("Submit Help Ticket")
+            
+            if submit_stage_ticket:
+                if not issue_desc.strip():
+                    st.error("Please describe your issue.")
+                else:
+                    with st.spinner("AI Support Agent is processing your request..."):
+                        try:
+                            support_agent = SupportAgent()
+                            cand_hist = {
+                                "name": st.session_state.candidate_name,
+                                "email": st.session_state.candidate_email,
+                                "job_role": st.session_state.job_role,
+                                "status": st.session_state.stage,
+                                "timestamp": "Active Session"
+                            }
+                            diagnosis_res = support_agent.run(
+                                candidate_email=st.session_state.candidate_email,
+                                reported_message=issue_desc.strip(),
+                                candidate_history=cand_hist
+                            )
+                            
+                            # Log issue ticket
+                            import datetime
+                            is_auto_resolved = getattr(diagnosis_res, "auto_resolve_eligible", False)
+                            cand_notif = getattr(diagnosis_res, "candidate_notification", "Your request is under review.")
+                            
+                            new_ticket = {
+                                "email": st.session_state.candidate_email,
+                                "name": st.session_state.candidate_name,
+                                "job_role": st.session_state.job_role,
+                                "message": issue_desc.strip(),
+                                "diagnosis": diagnosis_res.diagnosis,
+                                "severity": diagnosis_res.severity,
+                                "suggested_action": diagnosis_res.suggested_action,
+                                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "resolved": is_auto_resolved,
+                                "resolved_by": "AI Auto-Resolver" if is_auto_resolved else "Pending Review",
+                                "justification": getattr(diagnosis_res, "justification", ""),
+                                "confidence_score": getattr(diagnosis_res, "confidence_score", 0.0),
+                                "resolution_log": f"Auto-approved reset. Justification: {getattr(diagnosis_res, 'justification', '')}" if is_auto_resolved else "",
+                                "candidate_notification": cand_notif
+                            }
+                            
+                            if is_auto_resolved:
+                                # Update candidate database entry
+                                records = load_candidates()
+                                for r in records:
+                                    if r.get("email", "").strip().lower() == st.session_state.candidate_email.strip().lower():
+                                        r["allowed_retake"] = True
+                                        r["status"] = "Retake Allowed"
+                                        break
+                                try:
+                                    with open(CANDIDATES_FILE, "w") as f:
+                                        json.dump(records, f, indent=2)
+                                except Exception:
+                                    pass
+                            
+                            tickets = load_issues()
+                            updated = False
+                            for idx, t in enumerate(tickets):
+                                if t.get("email", "").strip().lower() == st.session_state.candidate_email.strip().lower() and not t.get("resolved", False):
+                                    tickets[idx] = new_ticket
+                                    updated = True
+                                    break
+                            if not updated:
+                                tickets.append(new_ticket)
+                                
+                            save_issues(tickets)
+                            
+                            if is_auto_resolved:
+                                st.session_state.support_resolved_message = cand_notif
+                            else:
+                                st.session_state.support_pending_message = cand_notif
+                            st.session_state.stage = "upload"
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Support Agent error: {str(e)}")

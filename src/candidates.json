@@ -1,1 +1,73 @@
-[]
+[
+  {
+    "name": "kiran",
+    "email": "kiran.gajjana@gmail.com",
+    "phone": "+919642971873",
+    "job_role": "ai/ml engineer",
+    "experience": "Entry Level (0-2 years)",
+    "status": "Retake Allowed",
+    "screening_reason": "Kiran, your resume showcases an impressive background as an AI/ML Engineer with strong expertise in deep learning, computer vision, and natural language processing. Your hands-on experience with Python, FastAPI, Azure AI, and key generative AI frameworks like LangChain and LangGraph directly aligns with the core requirements of this role. We are particularly excited about your experience in building scalable AI-driven solutions and your research background in adversarial attacks. You clearly possess the foundational knowledge and practical skills to excel, and we're delighted to invite you to the next MCQ round!",
+    "match_score": 95,
+    "matched_skills": [
+      "Python",
+      "FastAPI",
+      "Deep Learning",
+      "Computer Vision",
+      "Natural Language Processing (NLP)",
+      "Generative AI",
+      "LangChain",
+      "LangGraph",
+      "Azure AI",
+      "Azure ML",
+      "Supervised Learning",
+      "Machine Learning principles",
+      "MLOps"
+    ],
+    "missing_skills": [
+      "AWS",
+      "GCP"
+    ],
+    "red_flags": [
+      "Short tenure in current role (January 2024 - present)"
+    ],
+    "mcq_score": "N/A",
+    "selection": "N/A",
+    "summary": "",
+    "timestamp": "2026-06-14 01:06:46",
+    "allowed_retake": true
+  },
+  {
+    "name": "kiran",
+    "email": "kiran.gajjana@gmai.com",
+    "phone": "+919642971873",
+    "job_role": "ai/ml engineer",
+    "experience": "Entry Level (0-2 years)",
+    "status": "Interview Finished",
+    "screening_reason": "Kiran, your resume showcases an impressive background as an AI/ML Engineer with strong expertise in deep learning, computer vision, and NLP. Your hands-on experience with Python, FastAPI, Azure AI, and generative AI frameworks like LangChain and LangGraph directly aligns with the core requirements of this role. Your projects, including building AI-powered copilots and custom vision models, demonstrate practical application of these skills. We are very excited about your potential and believe you have an excellent foundation to excel in this position. You are highly qualified to proceed to the next MCQ round!",
+    "match_score": 95,
+    "matched_skills": [
+      "Python",
+      "FastAPI",
+      "Deep Learning",
+      "Generative AI",
+      "LangChain",
+      "LangGraph",
+      "Azure AI",
+      "Azure ML",
+      "Computer Vision",
+      "Natural Language Processing (NLP)",
+      "Supervised Learning",
+      "Machine Learning principles",
+      "MLOps"
+    ],
+    "missing_skills": [],
+    "red_flags": [
+      "Short tenure in current professional role (January 2024 - present)"
+    ],
+    "mcq_score": "5/5",
+    "selection": "Selected",
+    "summary": "Congratulations, Kiran! We were very impressed with your technical expertise and the depth of your experience in AI/ML. Your resume showcases a fantastic range of skills, from developing advanced deep learning models and generative AI applications using frameworks like LangChain and LangGraph, to deploying scalable solutions on Azure AI. We especially noted your impactful projects, such as the Support Copilot Automation and the ADO Bugs Automation Copilot, which demonstrate your ability to build practical, high-value AI solutions. During our discussion, you clearly articulated your understanding of core machine learning concepts and provided excellent examples of supervised learning. We are excited about your potential contributions and would like to invite you to the next stage of our hiring process. Great job, and we look forward to speaking with you again soon!",
+    "timestamp": "2026-06-14 01:55:59",
+    "allowed_retake": false
+  }
+]

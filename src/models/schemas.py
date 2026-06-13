@@ -25,3 +25,17 @@ class FinalEvaluation(BaseModel):
     selected: bool = Field(description="True if the candidate passes the interactive interview, False otherwise.")
     overall_feedback: str = Field(description="Detailed technical and behavioral assessment feedback for the hiring team.")
     summary_for_candidate: str = Field(description="Constructive feedback summarizing the candidate's performance.")
+
+class SupportDiagnosis(BaseModel):
+    diagnosis: str = Field(description="A concise summary/analysis of the issue the candidate is facing, and the root cause.")
+    severity: str = Field(description="Severity of the issue. Must be one of: 'Low', 'Medium', 'High'.")
+    suggested_action: str = Field(description="Action the recruiter should take (e.g. 'Reset MCQ test access', 'Contact candidate', 'No action needed').")
+    is_genuine_technical_issue: bool = Field(description="Set to True if the candidate describes a genuine system, network, interface, or transcription technical disruption. Set to False for vague, spam, or score improvement requests.")
+    auto_resolve_eligible: bool = Field(description="Set to True ONLY if this is a genuine technical issue AND resetting candidate access is a safe, recommended remedy. Set to False if manual recruiter human review is preferred.")
+    confidence_score: float = Field(description="Confidence rating of this decision between 0.0 and 1.0.")
+    justification: str = Field(description="Detailed explanation justifying why this ticket is eligible or ineligible for auto-resolution based on guardrails.")
+    candidate_notification: str = Field(description="A friendly, dynamic response message addressed directly to the candidate explaining the resolution outcome (e.g. 'Hello Kiran, we detected your MCQ was interrupted due to a browser crash, so we have automatically reset your access. You can now register and retake the test immediately!' or 'Hello Kiran, your request has been routed to our recruitment team for manual review as we need a bit more detail to verify the issue.')")
+
+class ClarificationResult(BaseModel):
+    is_clarification_request: bool = Field(description="Set to True if the candidate is asking to repeat the question, clarify a term, or explain the question again. Set to False if the candidate is answering the question normally.")
+    clarified_response: str = Field(description="The repeated question or clarified explanation formulated in a friendly, conversational manner, addressing their request directly.")
