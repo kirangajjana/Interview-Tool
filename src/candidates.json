@@ -1,43 +1,6 @@
 [
   {
     "name": "kiran",
-    "email": "kiran.gajjana@gmail.com",
-    "phone": "9642971873",
-    "job_role": "ai/ml engineer",
-    "experience": "Entry Level (0-2 years)",
-    "status": "Technical Interview Round",
-    "screening_reason": "We are absolutely thrilled to see your application! Your resume showcases an exceptional background in AI/ML engineering, with direct and extensive experience in Python, FastAPI, LangChain, LangGraph, and Azure AI. Your hands-on projects involving LLM-powered applications, computer vision, and NLP, combined with your Master's degree in Artificial Intelligence, make you an outstanding candidate for this role. You clearly possess the foundational knowledge and practical skills we are looking for, and we are very excited about your potential to contribute to our team. You are highly qualified to proceed to the next MCQ round!",
-    "match_score": 95,
-    "matched_skills": [
-      "Python",
-      "FastAPI",
-      "LangChain",
-      "LangGraph",
-      "Generative AI",
-      "Deep Learning",
-      "Machine Learning",
-      "Natural Language Processing (NLP)",
-      "Computer Vision",
-      "Azure AI",
-      "Azure ML",
-      "MLOps",
-      "OpenAI",
-      "Transformer-based architectures",
-      "API development"
-    ],
-    "missing_skills": [
-      "AWS",
-      "GCP"
-    ],
-    "red_flags": [],
-    "mcq_score": "5/5",
-    "selection": "N/A",
-    "summary": "",
-    "timestamp": "2026-06-14 17:53:34",
-    "allowed_retake": false
-  },
-  {
-    "name": "kiran",
     "email": "kiran.gajjana@gmai.com",
     "phone": "+919642971873",
     "job_role": "ai/ml engineer",

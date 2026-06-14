@@ -1380,20 +1380,45 @@ elif page == "🔒 Recruiter Portal":
                     
                     st.write("---")
                     st.write("#### ⚙️ Administrative Actions")
-                    allowed_retake = matched_candidate.get("allowed_retake", False)
-                    if allowed_retake:
-                        st.success("Retake has already been enabled for this candidate.")
-                    else:
-                        if st.button("🔓 Enable Retake / Reset Access", key=f"reset_btn_{matched_candidate['email']}"):
+                    
+                    col_adm1, col_adm2 = st.columns(2)
+                    with col_adm1:
+                        st.write("**Assessment Access**")
+                        allowed_retake = matched_candidate.get("allowed_retake", False)
+                        if allowed_retake:
+                            st.success("Retake has already been enabled for this candidate.")
+                        else:
+                            if st.button("🔓 Enable Retake / Reset Access", key=f"reset_btn_{matched_candidate['email']}", use_container_width=True):
+                                records = load_candidates()
+                                for r in records:
+                                    if r.get("email", "").strip().lower() == matched_candidate["email"].strip().lower():
+                                        r["allowed_retake"] = True
+                                        r["status"] = "Retake Allowed"
+                                        break
+                                with open(CANDIDATES_FILE, "w") as f:
+                                    json.dump(records, f, indent=2)
+                                st.success(f"Access reset successful! {matched_candidate['name']} can now register and retake the test.")
+                                time.sleep(1)
+                                st.rerun()
+                                
+                    with col_adm2:
+                        st.write("**Danger Zone**")
+                        st.warning("Deletions are permanent.")
+                        if st.button("🗑️ Delete Candidate Record", key=f"delete_btn_{matched_candidate['email']}", use_container_width=True):
                             records = load_candidates()
-                            for r in records:
-                                if r.get("email", "").strip().lower() == matched_candidate["email"].strip().lower():
-                                    r["allowed_retake"] = True
-                                    r["status"] = "Retake Allowed"
-                                    break
+                            filtered_records = [r for r in records if r.get("email", "").strip().lower() != matched_candidate["email"].strip().lower()]
                             with open(CANDIDATES_FILE, "w") as f:
-                                json.dump(records, f, indent=2)
-                            st.success(f"Access reset successful! {matched_candidate['name']} can now register and retake the test.")
+                                json.dump(filtered_records, f, indent=2)
+                            
+                            # Also delete any related support tickets
+                            try:
+                                tickets = load_issues()
+                                filtered_tickets = [t for t in tickets if t.get("email", "").strip().lower() != matched_candidate["email"].strip().lower()]
+                                save_issues(filtered_tickets)
+                            except Exception:
+                                pass
+                                
+                            st.success(f"Candidate {matched_candidate['name']} successfully deleted!")
                             time.sleep(1)
                             st.rerun()
                         
