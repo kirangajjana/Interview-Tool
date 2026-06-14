@@ -26,5 +26,21 @@
     "confidence_score": 0.9,
     "resolution_log": "Auto-approved reset. Justification: The candidate explicitly states their 'assesment was stoppend in the middle' and they are 'not able to access again' because it's showing 'assesment was aready registered'. This indicates a technical disruption or session lock-out during an active assessment, which is a genuine technical issue eligible for automatic test reset according to the guardrails.",
     "candidate_notification": "Hello Kiran, we understand you faced an issue where your assessment stopped in the middle and you were unable to access it again. We've detected this technical disruption and have automatically reset your assessment access. You can now re-register and attempt the test immediately! Good luck!"
+  },
+  {
+    "email": "kiran.gajjana@gmail.com",
+    "name": "kiran",
+    "job_role": "ai/ml engineer",
+    "message": "hey my assesment was stopped after the mcq can you grant me acccess",
+    "diagnosis": "The candidate, Kiran, reported that their assessment 'stopped after the MCQ' and requested access. While Kiran successfully passed the MCQ with a perfect score, the message lacks specific technical details regarding the nature or cause of the stoppage, making it unclear if a genuine technical issue occurred or if there's a misunderstanding of the assessment flow.",
+    "severity": "Medium",
+    "suggested_action": "Manual Review by Recruiter",
+    "timestamp": "2026-06-14 17:48:10",
+    "resolved": true,
+    "resolved_by": "Recruiter",
+    "justification": "The candidate's message 'hey my assesment was stopped after the mcq can you grant me acccess' is vague and lacks specific technical details required to confirm a genuine technical issue (e.g., system crash, browser freeze, internet disconnection). The candidate's history shows they successfully passed the MCQ. Without further information, this request falls under the 'Vague or general 'help me' messages lacking technical details' guardrail, making it ineligible for auto-resolution and requiring manual recruiter review.",
+    "confidence_score": 0.9,
+    "resolution_log": "",
+    "candidate_notification": "Hello Kiran, thank you for reaching out! We've received your request regarding your assessment. Since your message is a bit general and we need more details to understand exactly what happened after your MCQ, we've routed your request to our recruitment team for a manual review. They will look into this shortly and get back to you with more information. We appreciate your patience!"
   }
 ]

@@ -185,22 +185,21 @@ st.markdown("""
     }
     
     /* Card Glassmorphism */
-    .glass-card {
+    .glass-card, div[data-testid="stVerticalBlockBorderWrapper"] {
         background: var(--card-bg) !important;
         border: 1px solid var(--card-border) !important;
-        border-radius: 16px;
-        padding: 30px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-        margin-bottom: 30px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-        animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-        backdrop-filter: blur(12px);
+        border-radius: 16px !important;
+        padding: 30px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+        margin-bottom: 30px !important;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important;
+        backdrop-filter: blur(12px) !important;
     }
     
-    .glass-card:hover {
-        transform: translateY(-2px);
+    .glass-card:hover, div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+        transform: translateY(-2px) !important;
         border-color: var(--card-hover-border) !important;
-        box-shadow: 0 15px 35px rgba(229, 9, 20, 0.08), 0 10px 30px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 15px 35px rgba(229, 9, 20, 0.08), 0 10px 30px rgba(0, 0, 0, 0.1) !important;
     }
     
     .stage-title {
@@ -326,22 +325,27 @@ st.markdown("""
     }
     
     /* Navigation Pills layout styling */
-    div[data-testid="stRadio"] > div[role="radiogroup"] {
+    /* Target the navigation radio group specifically */
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] > div[role="radiogroup"] {
         background: var(--card-bg) !important;
         border: 1px solid var(--card-border) !important;
-        border-radius: 100px;
-        padding: 8px !important;
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        gap: 10px;
-        margin-bottom: 35px;
-        backdrop-filter: blur(20px);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        border-radius: 100px !important;
+        padding: 6px !important;
+        display: flex !important;
+        flex-direction: row !important; /* Force horizontal layout at all times */
+        flex-wrap: nowrap !important; /* Prevent vertical wrapping */
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 6px !important;
+        margin-bottom: 35px !important;
+        backdrop-filter: blur(20px) !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+        width: 100% !important;
+        overflow: hidden !important;
     }
     
-    /* Hide the radio button circles visually by making them tiny and transparent */
-    div[data-testid="stRadio"] label[data-baseweb="radio"] > div:first-child {
+    /* Hide the radio button circles visually */
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] > div:first-child {
         opacity: 0 !important;
         width: 0px !important;
         height: 0px !important;
@@ -351,33 +355,53 @@ st.markdown("""
     }
     
     /* Style the labels as tabs */
-    div[data-testid="stRadio"] label[data-baseweb="radio"] {
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] {
         background-color: transparent !important;
         border: none !important;
-        padding: 12px 36px !important;
+        padding: 10px 24px !important; /* Slightly reduced padding to guarantee single-line fit */
         border-radius: 100px !important;
-        color: var(--text-sub) !important;
         font-weight: 600 !important;
-        font-size: 1.05rem !important;
+        font-size: 0.95rem !important; /* Slightly reduced base font size */
         cursor: pointer !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         margin: 0 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        white-space: nowrap !important; /* Prevent text wrapping inside the pill */
+        flex: 1 1 auto !important; /* Distribute space evenly */
+        min-width: 0 !important;
+    }
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"],
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] * {
+        color: var(--text-sub) !important;
     }
     
     /* Hover state */
-    div[data-testid="stRadio"] label[data-baseweb="radio"]:hover {
-        color: var(--accent-red) !important;
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:hover {
         background-color: var(--tab-hover-bg) !important;
+    }
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:hover,
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:hover * {
+        color: var(--accent-red) !important;
     }
     
     /* Active/Checked state */
-    div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {
-        color: #ffffff !important;
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {
         background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover)) !important;
         box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4) !important;
+    }
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked),
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) * {
+        color: #ffffff !important;
+    }
+    
+    /* Responsive adjustment for extra small screens */
+    @media (max-width: 640px) {
+        div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] {
+            padding: 8px 12px !important;
+            font-size: 0.82rem !important;
+        }
     }
     
     /* Custom buttons */
@@ -546,6 +570,39 @@ st.markdown("""
         color: var(--text-sub);
         text-transform: uppercase;
         letter-spacing: 0.8px;
+    }
+    
+    /* Custom MCQ option cards customization */
+    div[data-testid="stRadio"]:not(.nav-container *) label[data-baseweb="radio"] {
+        background-color: var(--card-bg) !important;
+        border: 1px solid var(--card-border) !important;
+        border-radius: 10px !important;
+        padding: 12px 20px !important;
+        margin-bottom: 10px !important;
+        transition: all 0.2s ease !important;
+        cursor: pointer !important;
+        width: 100% !important;
+        display: flex !important;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02) !important;
+    }
+    div[data-testid="stRadio"]:not(.nav-container *) label[data-baseweb="radio"]:hover {
+        border-color: var(--accent-red) !important;
+        background-color: var(--tab-hover-bg) !important;
+    }
+    div[data-testid="stRadio"]:not(.nav-container *) label[data-baseweb="radio"]:has(input:checked) {
+        border-color: var(--accent-red) !important;
+        background-color: var(--badge-red-bg) !important;
+        box-shadow: 0 2px 10px rgba(229, 9, 20, 0.08) !important;
+        font-weight: 600 !important;
+    }
+    
+    /* AI interviewer avatar pulse glow */
+    .chat-avatar-ai {
+        display: inline-block;
+        animation: pulseGlow 2s infinite;
+        border-radius: 50%;
+        padding: 2px;
+        background-color: var(--badge-red-bg);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -962,7 +1019,9 @@ if "current_page" not in st.session_state:
 nav_options = ["📋 Open Positions", "🎯 Candidate Assessment", "🔒 Recruiter Portal"]
 default_nav_idx = nav_options.index(st.session_state.current_page) if st.session_state.current_page in nav_options else 0
 
+st.markdown('<div class="nav-container">', unsafe_allow_html=True)
 page = st.radio("Navigation", nav_options, index=default_nav_idx, horizontal=True, label_visibility="collapsed", key="navigation_radio")
+st.markdown('</div>', unsafe_allow_html=True)
 st.session_state.current_page = page
 
 if page == "📋 Open Positions":
@@ -1207,105 +1266,136 @@ elif page == "🔒 Recruiter Portal":
             st.markdown("---")
             st.subheader("Detailed Evaluation & Skill Gap Analysis")
             
-            selected_cand = st.selectbox("Select Candidate to view detailed scorecard", [f"{c['name']} ({c['email']}) - {c['job_role']}" for c in candidates])
+            # Live search filter bar
+            search_query = st.text_input("🔍 Live Candidate Search & Filter", "", placeholder="Search by name, email, or job role...", key="candidate_search_input")
             
-            matched_candidate = None
-            for c in candidates:
-                if f"{c['name']} ({c['email']}) - {c['job_role']}" == selected_cand:
-                    matched_candidate = c
-                    break
+            # Filter candidates list
+            filtered_cands = candidates
+            if search_query.strip():
+                q = search_query.strip().lower()
+                filtered_cands = [c for c in candidates if q in c.get("name", "").lower() or q in c.get("email", "").lower() or q in c.get("job_role", "").lower()]
+            
+            if not filtered_cands:
+                st.warning("No candidates match your search query.")
+                matched_candidate = None
+            else:
+                options = [f"{c['name']} ({c['email']}) - {c['job_role']}" for c in filtered_cands]
+                selected_cand = st.selectbox("Select Candidate to view detailed scorecard", options, key="candidate_scorecard_select")
+                
+                matched_candidate = None
+                for c in filtered_cands:
+                    if f"{c['name']} ({c['email']}) - {c['job_role']}" == selected_cand:
+                        matched_candidate = c
+                        break
             
             if matched_candidate:
-                st.markdown(f'<div class="glass-card" style="border-left: 5px solid var(--accent-red); padding: 20px;">', unsafe_allow_html=True)
-                st.markdown(f"### Scorecard: {matched_candidate['name']}")
+                with st.container(border=True):
+                    st.markdown(f"### Scorecard: {matched_candidate['name']}")
                 
-                # Visual Match Score Progress Bar
-                score = int(matched_candidate.get("match_score", 0))
-                st.write(f"**AI Match Score**: **{score}%**")
-                st.progress(score / 100.0)
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.write(f"📧 **Email**: {matched_candidate['email']}")
-                    st.write(f"📞 **Phone**: {matched_candidate['phone']}")
-                    st.write(f"💼 **Role**: {matched_candidate['job_role']}")
-                with col2:
-                    st.write(f"⏳ **Experience Level**: {matched_candidate['experience']}")
-                    st.write(f"📌 **Pipeline Status**: `{matched_candidate['status']}`")
-                    st.write(f"📊 **MCQ Score**: `{matched_candidate['mcq_score']}`")
-                
-                # Skill Gap Analysis
-                st.write("#### 🎯 Skill Mapping & Gap Analysis")
-                
-                # Matched Skills
-                matched_skills = matched_candidate.get("matched_skills", [])
-                if matched_skills:
-                    st.write("✅ **Matched Skills (Present in Resume):**")
-                    tags_html = "".join([f'<span style="background-color: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; margin-right: 8px; display: inline-block; margin-bottom: 5px;">{skill}</span>' for skill in matched_skills])
-                    st.markdown(tags_html, unsafe_allow_html=True)
-                else:
-                    st.write("✅ **Matched Skills:** None identified.")
-                
-                # Missing Skills
-                missing_skills = matched_candidate.get("missing_skills", [])
-                if missing_skills:
-                    st.write("⚠️ **Missing Skills (Required for JD):**")
-                    tags_html = "".join([f'<span style="background-color: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; margin-right: 8px; display: inline-block; margin-bottom: 5px;">{skill}</span>' for skill in missing_skills])
-                    st.markdown(tags_html, unsafe_allow_html=True)
-                else:
-                    st.write("⚠️ **Missing Skills:** None identified.")
-                
-                # Red Flags
-                red_flags = matched_candidate.get("red_flags", [])
-                # Filter out standard nones
-                has_red_flags = False
-                if red_flags:
-                    if isinstance(red_flags, list):
-                        has_red_flags = any(x.lower() not in ["none", ""] for x in red_flags)
+                    # AI Hiring Committee Recommendation Banner
+                    recommendation = matched_candidate.get("selection", "N/A")
+                    rec_badge_html = ""
+                    if "Recommended" in recommendation or "hire" in recommendation.lower():
+                        rec_badge_html = f'<div style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 15px 20px; display: flex; align-items: center; gap: 15px; margin-top: 15px; margin-bottom: 20px;"><span style="font-size: 2rem;">🏆</span><div><div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: #10b981; font-weight: 700;">AI Hiring Committee Recommendation</div><div style="font-size: 1.25rem; font-weight: 700; color: var(--text-main);">{recommendation}</div></div></div>'
                     else:
-                        has_red_flags = red_flags.lower() not in ["none", ""]
-                        
-                if has_red_flags:
-                    st.write("🚩 **Red Flags / Hiring Concerns:**")
-                    if isinstance(red_flags, list):
-                        for flag in red_flags:
-                            if flag.lower() not in ["none", ""]:
-                                st.markdown(f"- <span style='color: #ef4444; font-weight: 500;'>{flag}</span>", unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"- <span style='color: #ef4444; font-weight: 500;'>{red_flags}</span>", unsafe_allow_html=True)
-                
-                # Screening explanations
-                if matched_candidate.get("screening_reason"):
-                    st.markdown("**Screening Feedback:**")
-                    st.info(matched_candidate["screening_reason"])
-                
-                # Interview recommendation
-                st.write("#### 🎤 Interview Recommendation")
-                st.write(f"Recommendation: **{matched_candidate.get('selection', 'N/A')}**")
-                if matched_candidate.get("summary"):
-                    st.markdown("**Hiring Committee Summary:**")
-                    st.success(matched_candidate["summary"])
-                
-                st.write("---")
-                st.write("#### ⚙️ Administrative Actions")
-                allowed_retake = matched_candidate.get("allowed_retake", False)
-                if allowed_retake:
-                    st.success("Retake has already been enabled for this candidate.")
-                else:
-                    if st.button("🔓 Enable Retake / Reset Access", key=f"reset_btn_{matched_candidate['email']}"):
-                        records = load_candidates()
-                        for r in records:
-                            if r.get("email", "").strip().lower() == matched_candidate["email"].strip().lower():
-                                r["allowed_retake"] = True
-                                r["status"] = "Retake Allowed"
-                                break
-                        with open(CANDIDATES_FILE, "w") as f:
-                            json.dump(records, f, indent=2)
-                        st.success(f"Access reset successful! {matched_candidate['name']} can now register and retake the test.")
-                        time.sleep(1)
-                        st.rerun()
+                        rec_badge_html = f'<div style="background-color: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.15); border-radius: 12px; padding: 15px 20px; display: flex; align-items: center; gap: 15px; margin-top: 15px; margin-bottom: 20px;"><span style="font-size: 2rem;">⚠️</span><div><div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: #ef4444; font-weight: 700;">AI Hiring Committee Recommendation</div><div style="font-size: 1.25rem; font-weight: 700; color: var(--text-main);">{recommendation}</div></div></div>'
+                    st.markdown(rec_badge_html, unsafe_allow_html=True)
                     
-                st.markdown('</div>', unsafe_allow_html=True)
+                    # Visual Match Score Progress Bar
+                    score = int(matched_candidate.get("match_score", 0))
+                    st.write(f"**AI Match Score**: **{score}%**")
+                    st.progress(score / 100.0)
+                    
+                    # Pipeline Status Badge
+                    status = matched_candidate.get("status", "Applied")
+                    status_badge_html = ""
+                    if "Screening Failed" in status or "Failed" in status:
+                        status_badge_html = f'<span style="background-color: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">🔴 {status}</span>'
+                    elif "Evaluation" in status or "Hired" in status or "Passed" in status:
+                        status_badge_html = f'<span style="background-color: rgba(16, 185, 129, 0.15); color: #10b981; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">🟢 {status}</span>'
+                    else:
+                        status_badge_html = f'<span style="background-color: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">🟡 {status}</span>'
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.write(f"📧 **Email**: {matched_candidate['email']}")
+                        st.write(f"📞 **Phone**: {matched_candidate['phone']}")
+                        st.write(f"💼 **Role**: {matched_candidate['job_role']}")
+                    with col2:
+                        st.write(f"⏳ **Experience Level**: {matched_candidate['experience']}")
+                        st.markdown(f"📌 **Pipeline Status**: {status_badge_html}", unsafe_allow_html=True)
+                        st.write(f"📊 **MCQ Score**: `{matched_candidate['mcq_score']}`")
+                    
+                    # Skill Gap Analysis
+                    st.write("#### 🎯 Skill Mapping & Gap Analysis")
+                    
+                    # Matched Skills
+                    matched_skills = matched_candidate.get("matched_skills", [])
+                    if matched_skills:
+                        st.write("✅ **Matched Skills (Present in Resume):**")
+                        tags_html = "".join([f'<span style="background-color: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; margin-right: 8px; display: inline-block; margin-bottom: 5px;">{skill}</span>' for skill in matched_skills])
+                        st.markdown(tags_html, unsafe_allow_html=True)
+                    else:
+                        st.write("✅ **Matched Skills:** None identified.")
+                    
+                    # Missing Skills
+                    missing_skills = matched_candidate.get("missing_skills", [])
+                    if missing_skills:
+                        st.write("⚠️ **Missing Skills (Required for JD):**")
+                        tags_html = "".join([f'<span style="background-color: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; margin-right: 8px; display: inline-block; margin-bottom: 5px;">{skill}</span>' for skill in missing_skills])
+                        st.markdown(tags_html, unsafe_allow_html=True)
+                    else:
+                        st.write("⚠️ **Missing Skills:** None identified.")
+                    
+                    # Red Flags
+                    red_flags = matched_candidate.get("red_flags", [])
+                    # Filter out standard nones
+                    has_red_flags = False
+                    if red_flags:
+                        if isinstance(red_flags, list):
+                            has_red_flags = any(x.lower() not in ["none", ""] for x in red_flags)
+                        else:
+                            has_red_flags = red_flags.lower() not in ["none", ""]
+                            
+                    if has_red_flags:
+                        st.write("🚩 **Red Flags / Hiring Concerns:**")
+                        if isinstance(red_flags, list):
+                            for flag in red_flags:
+                                if flag.lower() not in ["none", ""]:
+                                    st.markdown(f"- <span style='color: #ef4444; font-weight: 500;'>{flag}</span>", unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"- <span style='color: #ef4444; font-weight: 500;'>{red_flags}</span>", unsafe_allow_html=True)
+                    
+                    # Screening explanations
+                    if matched_candidate.get("screening_reason"):
+                        st.markdown("**Screening Feedback:**")
+                        st.info(matched_candidate["screening_reason"])
+                    
+                    # Interview recommendation
+                    st.write("#### 🎤 Interview Recommendation")
+                    st.write(f"Recommendation: **{matched_candidate.get('selection', 'N/A')}**")
+                    if matched_candidate.get("summary"):
+                        st.markdown("**Hiring Committee Summary:**")
+                        st.success(matched_candidate["summary"])
+                    
+                    st.write("---")
+                    st.write("#### ⚙️ Administrative Actions")
+                    allowed_retake = matched_candidate.get("allowed_retake", False)
+                    if allowed_retake:
+                        st.success("Retake has already been enabled for this candidate.")
+                    else:
+                        if st.button("🔓 Enable Retake / Reset Access", key=f"reset_btn_{matched_candidate['email']}"):
+                            records = load_candidates()
+                            for r in records:
+                                if r.get("email", "").strip().lower() == matched_candidate["email"].strip().lower():
+                                    r["allowed_retake"] = True
+                                    r["status"] = "Retake Allowed"
+                                    break
+                            with open(CANDIDATES_FILE, "w") as f:
+                                json.dump(records, f, indent=2)
+                            st.success(f"Access reset successful! {matched_candidate['name']} can now register and retake the test.")
+                            time.sleep(1)
+                            st.rerun()
                         
     with portal_tab3:
         st.subheader("⚠️ Support Requests & AI Diagnoses")
@@ -1501,109 +1591,89 @@ if st.session_state.stage == "upload":
         """, unsafe_allow_html=True)
         
         # Report form section
-        st.markdown('<div class="glass-card" style="margin-top: 15px; border-left: 5px solid var(--accent-red);">', unsafe_allow_html=True)
-        st.markdown('<h4 style="margin-top: 0; color: var(--text-main);">🛠️ Having Technical Issues or Need a Retake?</h4>', unsafe_allow_html=True)
-        st.write("Describe what issue you faced (e.g. system crashed, internet disconnected, audio issues). The AI Support Agent will diagnose your request and notify the recruiter.")
-        
-        with st.form("support_request_form"):
-            reported_msg = st.text_area("Detail your issue here...", placeholder="Explain exactly what happened, and why you need to retake the assessment...", height=120)
-            submit_ticket = st.form_submit_button("Submit Help Request")
+        with st.container(border=True):
+            st.markdown('<h4 style="margin-top: 0; color: var(--text-main);">🛠️ Having Technical Issues or Need a Retake?</h4>', unsafe_allow_html=True)
+            st.write("Describe what issue you faced (e.g. system crashed, internet disconnected, audio issues). The AI Support Agent will diagnose your request and notify the recruiter.")
             
-            if submit_ticket:
-                if not reported_msg.strip():
-                    st.error("Please enter a description of the issue before submitting.")
-                else:
-                    with st.spinner("AI Support Agent is diagnosing the issue..."):
-                        try:
-                            support_agent = SupportAgent()
-                            diagnosis_res = support_agent.run(
-                                candidate_email=dup.get('email'),
-                                reported_message=reported_msg.strip(),
-                                candidate_history=dup
-                            )
-                            
-                            # Log issue ticket
-                            import datetime
-                            is_auto_resolved = getattr(diagnosis_res, "auto_resolve_eligible", False)
-                            cand_notif = getattr(diagnosis_res, "candidate_notification", "Your request is under review.")
-                            
-                            new_ticket = {
-                                "email": dup.get('email'),
-                                "name": dup.get('name'),
-                                "job_role": dup.get('job_role'),
-                                "message": reported_msg.strip(),
-                                "diagnosis": diagnosis_res.diagnosis,
-                                "severity": diagnosis_res.severity,
-                                "suggested_action": diagnosis_res.suggested_action,
-                                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                "resolved": is_auto_resolved,
-                                "resolved_by": "AI Auto-Resolver" if is_auto_resolved else "Pending Review",
-                                "justification": getattr(diagnosis_res, "justification", ""),
-                                "confidence_score": getattr(diagnosis_res, "confidence_score", 0.0),
-                                "resolution_log": f"Auto-approved reset. Justification: {getattr(diagnosis_res, 'justification', '')}" if is_auto_resolved else "",
-                                "candidate_notification": cand_notif
-                            }
-                            
-                            if is_auto_resolved:
-                                # Update candidate database entry
-                                records = load_candidates()
-                                for r in records:
-                                    if r.get("email", "").strip().lower() == dup.get('email', "").strip().lower():
-                                        r["allowed_retake"] = True
-                                        r["status"] = "Retake Allowed"
-                                        break
-                                try:
-                                    with open(CANDIDATES_FILE, "w") as f:
-                                        json.dump(records, f, indent=2)
-                                except Exception:
-                                    pass
-                            
-                            tickets = load_issues()
-                            # Replace if there's already an active ticket for this email
-                            updated = False
-                            for idx, t in enumerate(tickets):
-                                if t.get("email", "").strip().lower() == dup.get('email', "").strip().lower() and not t.get("resolved", False):
-                                    tickets[idx] = new_ticket
-                                    updated = True
-                                    break
-                            if not updated:
-                                tickets.append(new_ticket)
+            with st.form("support_request_form"):
+                reported_msg = st.text_area("Detail your issue here...", placeholder="Explain exactly what happened, and why you need to retake the assessment...", height=120)
+                submit_ticket = st.form_submit_button("Submit Help Request")
+                
+                if submit_ticket:
+                    if not reported_msg.strip():
+                        st.error("Please enter a description of the issue before submitting.")
+                    else:
+                        with st.spinner("AI Support Agent is diagnosing the issue..."):
+                            try:
+                                support_agent = SupportAgent()
+                                diagnosis_res = support_agent.run(
+                                    candidate_email=dup.get('email'),
+                                    reported_message=reported_msg.strip(),
+                                    candidate_history=dup
+                                )
                                 
-                            save_issues(tickets)
-                            
-                            if is_auto_resolved:
-                                st.session_state.support_resolved_message = cand_notif
-                            else:
-                                st.session_state.support_pending_message = cand_notif
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Support Agent error: {str(e)}")
-        st.markdown('</div>', unsafe_allow_html=True)
+                                # Log issue ticket
+                                import datetime
+                                is_auto_resolved = getattr(diagnosis_res, "auto_resolve_eligible", False)
+                                cand_notif = getattr(diagnosis_res, "candidate_notification", "Your request is under review.")
+                                
+                                new_ticket = {
+                                    "email": dup.get('email'),
+                                    "name": dup.get('name'),
+                                    "job_role": dup.get('job_role'),
+                                    "message": reported_msg.strip(),
+                                    "diagnosis": diagnosis_res.diagnosis,
+                                    "severity": diagnosis_res.severity,
+                                    "suggested_action": diagnosis_res.suggested_action,
+                                    "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    "resolved": is_auto_resolved,
+                                    "resolved_by": "AI Auto-Resolver" if is_auto_resolved else "Pending Review",
+                                    "justification": getattr(diagnosis_res, "justification", ""),
+                                    "confidence_score": getattr(diagnosis_res, "confidence_score", 0.0),
+                                    "resolution_log": f"Auto-approved reset. Justification: {getattr(diagnosis_res, 'justification', '')}" if is_auto_resolved else "",
+                                    "candidate_notification": cand_notif
+                                }
+                                
+                                if is_auto_resolved:
+                                    # Update candidate database entry
+                                    records = load_candidates()
+                                    for r in records:
+                                        if r.get("email", "").strip().lower() == dup.get('email', "").strip().lower():
+                                            r["allowed_retake"] = True
+                                            r["status"] = "Retake Allowed"
+                                            break
+                                    try:
+                                        with open(CANDIDATES_FILE, "w") as f:
+                                            json.dump(records, f, indent=2)
+                                    except Exception:
+                                        pass
+                                
+                                tickets = load_issues()
+                                # Replace if there's already an active ticket for this email
+                                updated = False
+                                for idx, t in enumerate(tickets):
+                                    if t.get("email", "").strip().lower() == dup.get('email', "").strip().lower() and not t.get("resolved", False):
+                                        tickets[idx] = new_ticket
+                                        updated = True
+                                        break
+                                if not updated:
+                                    tickets.append(new_ticket)
+                                    
+                                save_issues(tickets)
+                                
+                                if is_auto_resolved:
+                                    st.session_state.support_resolved_message = cand_notif
+                                else:
+                                    st.session_state.support_pending_message = cand_notif
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Support Agent error: {str(e)}")
 
         if st.button("← Go Back to Form"):
             st.session_state.duplicate_blocked = False
             st.session_state.duplicate_candidate = None
             st.rerun()
         st.stop()
-
-    # Render persistent support notifications if candidate email matches a resolved ticket
-    active_email = st.session_state.get("candidate_email_val", "").strip().lower()
-    if active_email:
-        tickets = load_issues()
-        resolved_tickets = [t for t in tickets if t.get("email", "").strip().lower() == active_email and t.get("resolved", False)]
-        if resolved_tickets:
-            latest_ticket = resolved_tickets[-1]
-            st.markdown(f"""
-            <div class="glass-card" style="border-left: 6px solid #10b981; padding: 20px; margin-bottom: 25px; background-color: #f0fdf4;">
-                <h5 style="margin: 0 0 8px 0; color: #166534; font-size: 1.1rem; font-weight: 700;">🔔 Helpdesk Update</h5>
-                <p style="margin: 0; color: #1e293b; font-size: 0.95rem; line-height: 1.5;">
-                    {latest_ticket.get('candidate_notification', latest_ticket.get('resolution_log'))}
-                </p>
-                <div style="font-size: 0.8rem; color: #64748b; margin-top: 8px;">
-                    Resolved on: {latest_ticket.get('timestamp')}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
 
     st.markdown("""
     <div class="glass-card" style="margin-bottom: 20px;">
@@ -1842,7 +1912,7 @@ elif st.session_state.stage == "interview":
         else:
             chat_html += f"""
             <div class="chat-bubble chat-bubble-assistant">
-                <span class="chat-avatar">🤖</span> {formatted_content}
+                <span class="chat-avatar chat-avatar-ai">🤖</span> {formatted_content}
             </div>
             """
     chat_html += '</div>'
