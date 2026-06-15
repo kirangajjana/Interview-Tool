@@ -18,6 +18,7 @@ from src.agents.shared_agents.email_agent import EmailAgent
 from src.agents.recruiter_agents.support_agent import SupportAgent
 from src.agents.candidate_agents.repeat_agent import RepeatAgent
 from src.agents.recruiter_agents.job_agent import JobAgent
+from src.agents.candidate_agents.proctoring_agent.proctoring_agent import ProctoringAgent
 
 # Set page configurations
 st.set_page_config(
@@ -748,6 +749,19 @@ st.markdown("""
         vertical-align: middle;
         box-shadow: 0 0 8px var(--accent-red);
     }
+    
+    /* Hide proctoring trigger button */
+    .hidden-proctor-btn,
+    .hidden-proctor-btn div,
+    .hidden-proctor-btn button {
+        display: none !important;
+        height: 0px !important;
+        width: 0px !important;
+        overflow: hidden !important;
+        padding: 0px !important;
+        margin: 0px !important;
+        border: none !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -824,6 +838,7 @@ def render_stepper(current_stage):
         "upload": 1,
         "screening_passed": 2,
         "screening_failed": 2,
+        "proctoring_instruction": 3,
         "mcq": 3,
         "mcq_passed_screen": 3,
         "mcq_failed_screen": 3,
@@ -1038,7 +1053,7 @@ def render_candidate_hub():
             </div>
             """, unsafe_allow_html=True)
             
-            score_tab1, score_tab2, score_tab3 = st.tabs(["📊 Match Analysis", "💬 Interview Transcript", "⚙️ Administrative Controls"])
+            score_tab1, score_tab2, score_tab3, score_tab4 = st.tabs(["📊 Match Analysis", "💬 Interview Transcript", "🛡️ Proctoring Report", "⚙️ Administrative Controls"])
             
             with score_tab1:
                 recommendation = matched_candidate.get("selection", "N/A")
@@ -1054,7 +1069,7 @@ def render_candidate_hub():
                 
                 status = matched_candidate.get("status", "Applied")
                 status_badge_html = ""
-                if "Screening Failed" in status or "Failed" in status:
+                if "Screening Failed" in status or "Failed" in status or "Violation" in status or "Disqualified" in status:
                     status_badge_html = f'<span style="background-color: rgba(239, 68, 68, 0.12); color: #ef4444; padding: 3px 8px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">🔴 {status}</span>'
                 elif "Evaluation" in status or "Hired" in status or "Passed" in status:
                     status_badge_html = f'<span style="background-color: rgba(16, 185, 129, 0.12); color: #10b981; padding: 3px 8px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">🟢 {status}</span>'
@@ -1124,25 +1139,66 @@ def render_candidate_hub():
                 if not chat_hist:
                     st.info("No conversational interview logs are available for this candidate yet.")
                 else:
-                    chat_log_html = '<div class="chat-bubble-container">'
-                    for message in chat_hist:
-                        formatted_content = format_chat_text(message["content"])
-                        if message["role"] == "user":
-                            chat_log_html += f"""
-                            <div class="chat-bubble chat-bubble-user" style="align-self: flex-end; margin-bottom: 10px;">
-                                <span class="chat-avatar">🧑</span> <strong>Candidate:</strong> {formatted_content}
-                            </div>
-                            """
-                        else:
-                            chat_log_html += f"""
-                            <div class="chat-bubble chat-bubble-assistant" style="align-self: flex-start; margin-bottom: 10px;">
-                                <span class="chat-avatar chat-avatar-ai">🤖</span> <strong>Interviewer:</strong> {formatted_content}
-                            </div>
-                            """
-                    chat_log_html += '</div>'
-                    st.markdown(chat_log_html, unsafe_allow_html=True)
+                    with st.container(height=400):
+                        for message in chat_hist:
+                            avatar = "🧑" if message["role"] == "user" else "🤖"
+                            with st.chat_message(message["role"], avatar=avatar):
+                                st.markdown(message["content"])
                     
             with score_tab3:
+                st.write("#### 🛡️ AI Proctoring & Trust Assessment")
+                
+                switches = matched_candidate.get("tab_switches", 0)
+                warnings = matched_candidate.get("proctoring_warnings", [])
+                violated = matched_candidate.get("proctoring_violated", False)
+                report = matched_candidate.get("proctoring_report")
+                
+                col_met1, col_met2, col_met3 = st.columns(3)
+                
+                trust_score = 100
+                if report and "trust_score" in report:
+                    trust_score = report["trust_score"]
+                else:
+                    trust_score = max(0, 100 - switches * 25)
+                
+                with col_met1:
+                    st.metric(label="Proctoring Trust Score", value=f"{trust_score}%")
+                with col_met2:
+                    st.metric(label="Tab Switch Events", value=f"{switches} / 3")
+                with col_met3:
+                    risk_level = "Low"
+                    if report and "risk_level" in report:
+                        risk_level = report["risk_level"]
+                    elif switches > 0:
+                        risk_level = "Medium" if switches <= 2 else ("High" if switches == 3 else "Suspicious - Auto-Submitted")
+                    st.metric(label="Risk Assessment", value=risk_level)
+                
+                st.write("---")
+                
+                if report:
+                    st.write("##### 🤖 AI Proctoring Analysis & Verdict")
+                    verdict = report.get("proctoring_verdict", "N/A")
+                    likelihood = report.get("cheating_likelihood", "N/A")
+                    summary = report.get("violation_summary", "No details available.")
+                    
+                    if verdict == "Disqualified" or violated:
+                        st.error(f"**Final Verdict**: 🚨 DISQUALIFIED ({verdict})")
+                    elif verdict == "Under Review":
+                        st.warning(f"**Final Verdict**: ⚠️ UNDER REVIEW ({verdict})")
+                    else:
+                        st.success(f"**Final Verdict**: ✅ PASSED PROCTORING ({verdict})")
+                        
+                    st.write(f"**Cheating Likelihood**: `{likelihood}`")
+                    st.info(f"**AI Analyst Assessment**: {summary}")
+                else:
+                    st.info("No AI Proctoring Report generated yet. Completed normally with zero warnings.")
+                
+                if warnings:
+                    st.write("##### ⏳ Focus Loss Timeline Logs")
+                    for w_idx, w_time in enumerate(warnings, 1):
+                        st.markdown(f"- **Event {w_idx}**: Focus lost at `{w_time}`")
+                    
+            with score_tab4:
                 st.write("#### ⚙️ Administrative Controls & Reset Actions")
                 col_adm1, col_adm2 = st.columns(2)
                 with col_adm1:
@@ -1185,7 +1241,71 @@ def render_candidate_hub():
 
 
 @st.fragment
+def render_proctoring_instruction_stage():
+    st.markdown("""
+    <div class="glass-card" style="margin-bottom: 20px; border-left: 5px solid var(--accent-red);">
+        <div class="stage-title">📋 Assessment Guidelines & Proctoring Instructions</div>
+        <div style="color: var(--text-main); font-size: 1.05rem; line-height: 1.6; margin-top: 15px;">
+            Please read the following instructions carefully before starting the assessment. This test uses <strong>AI-assisted proctoring</strong> to monitor session integrity.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.write("### 🛠️ Assessment Details")
+    st.markdown("""
+    - **Format**: 5 technical multiple-choice questions (MCQs) customized to your resume and applied role.
+    - **Passing Threshold**: 60% (at least **3 out of 5** correct).
+    - **Time Limit**: The test is not strictly timed, but it must be completed in a single continuous session.
+    """)
+    
+    st.write("### 🛡️ AI Proctoring & Integrity Rules")
+    st.warning("""
+    ⚠️ **IMPORTANT RULES**:
+    1. **No Tab Switching**: Switching to other browser tabs is strictly prohibited.
+    2. **No Window Focus Loss**: Clicking outside the assessment window (e.g., opening other applications, IDEs, or browser developer tools) is monitored.
+    3. **Violation Tolerances**:
+       - The system automatically detects tab switches or window blurs and will display a warning immediately.
+       - You are allowed a maximum of **3 warnings**.
+       - On the **4th violation**, the assessment will be **automatically terminated and submitted** for evaluation based on your progress so far, and flagged with a proctoring violation.
+    """)
+    
+    st.write("### 🤝 Candidate Agreement")
+    agree = st.checkbox("I understand the rules and agree to take the assessment under active proctoring monitoring without unauthorized assistance.", key="proctor_agreement_checkbox")
+    
+    col1, col2 = st.columns([3, 7])
+    with col1:
+        if st.button("🚀 Start Assessment", use_container_width=True, disabled=not agree):
+            st.session_state.stage = "mcq"
+            st.session_state.tab_switches = 0
+            st.session_state.proctoring_warnings = []
+            st.session_state.proctoring_violated = False
+            log_candidate_state()
+            st.rerun()
+
+@st.fragment
 def render_mcq_stage():
+    # Generate tailored technical MCQs if not already present
+    if not st.session_state.get("mcqs"):
+        with st.spinner("Generating customized MCQ questions tailored to your profile..."):
+            try:
+                mcq_agent = MCQAgent()
+                job_diff = JOB_DIFFICULTIES.get(st.session_state.job_role, "Medium")
+                mcq_list = mcq_agent.run(
+                    resume_text=st.session_state.resume_text,
+                    job_role=st.session_state.job_role,
+                    difficulty=job_diff,
+                    num_questions=5
+                )
+                st.session_state.mcqs = mcq_list.questions
+                log_candidate_state()
+                st.rerun()
+            except Exception as e:
+                st.error(f"Failed to generate MCQ questions: {str(e)}")
+                return
+
+    if st.session_state.get("tab_switches", 0) > 0 and st.session_state.get("candidate_user_email") != "admin@test.com":
+        st.error(f"⚠️ **PROCTORING WARNING ({st.session_state.tab_switches}/3)**: A tab switch or focus loss was detected. If you switch tabs/windows again, your test will be auto-submitted and flagged for review.")
+        
     st.markdown("""
     <div class="glass-card" style="margin-bottom: 20px;">
         <div class="stage-title">Stage 2: Technical MCQ Screening</div>
@@ -1213,19 +1333,31 @@ def render_mcq_stage():
         else:
             score, pct, results = MCQAgent.grade_answers(st.session_state.mcqs, temp_answers)
             st.session_state.mcq_score = score
-            st.session_state.mcq_passed = score >= 3
+            st.session_state.mcq_passed = (score >= 3) or (st.session_state.get("candidate_user_email") == "admin@test.com")
             st.session_state.mcq_answers = temp_answers
             
             if st.session_state.mcq_passed:
                 st.session_state.stage = "mcq_passed_screen"
             else:
                 st.session_state.stage = "mcq_failed_screen"
+            run_proctoring_analysis()
             log_candidate_state()
             st.rerun()
 
 
 @st.fragment
 def render_interview_stage():
+    if st.session_state.get("tab_switches", 0) > 0 and st.session_state.get("candidate_user_email") != "admin@test.com":
+        st.error(f"⚠️ **PROCTORING WARNING ({st.session_state.tab_switches}/3)**: A tab switch or focus loss was detected. If you switch tabs/windows again, your test will be auto-submitted and flagged for review.")
+        
+    # 1. Display Chat Feed Container at the TOP
+    with st.container(height=480):
+        for message in st.session_state.chat_history:
+            avatar = "🧑" if message["role"] == "user" else "🤖"
+            with st.chat_message(message["role"], avatar=avatar):
+                st.markdown(message["content"])
+
+    # 2. Render response inputs container at the BOTTOM
     user_response_text = ""
     if not st.session_state.interview_concluded:
         with st.container(border=True):
@@ -1241,11 +1373,12 @@ def render_interview_stage():
             with tab_voice:
                 st.markdown('<div><span class="recording-indicator"></span><strong>Microphone Ready</strong> - speak clearly and submit.</div>', unsafe_allow_html=True)
                 st.info("🎙️ **Voice Instructions**: Click the microphone icon below to start recording. Speak your answer clearly, and click the stop icon when you are finished. Then click **Submit Answer**.")
-                audio_file = st.audio_input("Record your answer", key="interview_audio_record")
+                audio_key = f"interview_audio_record_{len(st.session_state.get('chat_history', []))}"
+                audio_file = st.audio_input("Record your answer", key=audio_key)
                 if audio_file:
                     st.audio(audio_file)
                     if st.button("Submit Answer", key="interview_voice_submit_btn"):
-                        with st.spinner("Transcribing your audio..."):
+                        with st.spinner("Agent is looking into your response, please wait..."):
                             try:
                                 config = Config.load_config()
                                 from google import genai
@@ -1309,27 +1442,10 @@ def render_interview_stage():
                         st.session_state.chat_history.append({"role": "assistant", "content": res.response})
                         if res.should_conclude:
                             st.session_state.interview_concluded = True
+                    log_candidate_state()
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Error during interview conversation: {str(e)}")
-
-    # Display Chat Bubbles
-    chat_html = '<div class="chat-bubble-container">'
-    for message in st.session_state.chat_history:
-        formatted_content = format_chat_text(message["content"])
-        if message["role"] == "user":
-            chat_html += f"""
-            <div class="chat-bubble chat-bubble-user" style="align-self: flex-end; margin-bottom: 10px;">
-                <span class="chat-avatar">🧑</span> {formatted_content}
-            </div>
-            """
-        else:
-            chat_html += f"""
-            <div class="chat-bubble chat-bubble-assistant" style="align-self: flex-start; margin-bottom: 10px;">
-                <span class="chat-avatar chat-avatar-ai">🤖</span> {formatted_content}
-            </div>
-            """
-    chat_html += '</div>'
-    st.markdown(chat_html, unsafe_allow_html=True)
 
     if st.session_state.chat_history and st.session_state.chat_history[-1]["role"] == "assistant":
         col_rep1, col_rep2 = st.columns([3, 7])
@@ -1352,6 +1468,7 @@ def render_interview_stage():
                     )
                     st.session_state.evaluation_result = eval_res
                     st.session_state.stage = "final_evaluation"
+                    run_proctoring_analysis()
                     log_candidate_state()
                     st.rerun()
                 except Exception as e:
@@ -1375,6 +1492,25 @@ def render_interview_stage():
                     var engVoice = voices.find(v => v.lang.startsWith('en'));
                     if (engVoice) utterance.voice = engVoice;
                     window.parent.speechSynthesis.speak(utterance);
+                }}
+                
+                // Stop speech if candidate decides to record, type, or interact in any way
+                try {{
+                    if (window.parent.__tts_cancel_listener__) {{
+                        window.parent.document.removeEventListener('click', window.parent.__tts_cancel_listener__, true);
+                        window.parent.document.removeEventListener('keydown', window.parent.__tts_cancel_listener__, true);
+                    }}
+                    
+                    window.parent.__tts_cancel_listener__ = function() {{
+                        if (window.parent.speechSynthesis) {{
+                            window.parent.speechSynthesis.cancel();
+                        }}
+                    }};
+                    
+                    window.parent.document.addEventListener('click', window.parent.__tts_cancel_listener__, true);
+                    window.parent.document.addEventListener('keydown', window.parent.__tts_cancel_listener__, true);
+                }} catch (e) {{
+                    console.error("TTS silencer failed to register:", e);
                 }}
             </script>
             """, height=0)
@@ -1468,11 +1604,12 @@ def render_job_management_tab():
             with tab_voice:
                 st.markdown('<div><span class="recording-indicator"></span><strong>Microphone Ready</strong> - speak clearly and submit.</div>', unsafe_allow_html=True)
                 st.info("🎙️ **Voice Instructions**: Click the microphone icon to record your instruction, then click **Submit Voice Command**.")
-                audio_file = st.audio_input("Record your instruction", key="job_agent_audio_record_key")
+                recruiter_audio_key = f"job_agent_audio_record_{len(st.session_state.get('job_agent_history', []))}"
+                audio_file = st.audio_input("Record your instruction", key=recruiter_audio_key)
                 if audio_file:
                     st.audio(audio_file)
                     if st.button("Submit Voice Command", key="job_agent_voice_submit_key", use_container_width=True):
-                        with st.spinner("Transcribing your audio..."):
+                        with st.spinner("Processing voice command, please wait..."):
                             try:
                                 config = Config.load_config()
                                 from google import genai
@@ -1706,6 +1843,275 @@ def save_issues(issues):
     except Exception as e:
         return False
 
+def run_proctoring_analysis():
+    name = st.session_state.get("candidate_name", "").strip()
+    email = st.session_state.get("candidate_email", "").strip()
+    if not name or not email:
+        return
+        
+    if email == "admin@test.com":
+        st.session_state.proctoring_report = {
+            "trust_score": 100,
+            "risk_level": "Low",
+            "violation_summary": "Admin Tester account: Proctoring bypassed.",
+            "cheating_likelihood": "Unlikely",
+            "proctoring_verdict": "Passed Proctoring"
+        }
+        return
+        
+    tab_switches = st.session_state.get("tab_switches", 0)
+    warnings = st.session_state.get("proctoring_warnings", [])
+    stage = st.session_state.get("stage", "")
+    job_role = st.session_state.get("job_role", "")
+    
+    try:
+        from src.agents.candidate_agents.proctoring_agent.proctoring_agent import ProctoringAgent
+        agent = ProctoringAgent()
+        report = agent.run(
+            candidate_name=name,
+            email=email,
+            job_role=job_role,
+            tab_switches=tab_switches,
+            warnings_timestamps=warnings,
+            stage=stage
+        )
+        report_dict = {
+            "trust_score": report.trust_score,
+            "risk_level": report.risk_level,
+            "violation_summary": report.violation_summary,
+            "cheating_likelihood": report.cheating_likelihood,
+            "proctoring_verdict": report.proctoring_verdict
+        }
+        st.session_state.proctoring_report = report_dict
+    except Exception as e:
+        trust = max(0, 100 - tab_switches * 25)
+        risk = "Low" if tab_switches == 0 else ("Medium" if tab_switches <= 2 else ("High" if tab_switches == 3 else "Suspicious - Auto-Submitted"))
+        st.session_state.proctoring_report = {
+            "trust_score": trust,
+            "risk_level": risk,
+            "violation_summary": f"Fallback Assessment: Candidate completed with {tab_switches} tab switch events.",
+            "cheating_likelihood": "Possible" if tab_switches > 0 else "Unlikely",
+            "proctoring_verdict": "Disqualified" if tab_switches >= 4 else ("Under Review" if tab_switches > 0 else "Passed Proctoring")
+        }
+
+def render_proctoring_elements():
+    # If the logged-in candidate is the admin tester, bypass proctoring check completely.
+    if st.session_state.get("candidate_user_email") == "admin@test.com":
+        st.session_state.tab_switches = 0
+        st.session_state.proctoring_warnings = []
+        st.session_state.proctoring_violated = False
+        st.session_state.proctoring_report = {
+            "trust_score": 100,
+            "risk_level": "Low",
+            "violation_summary": "Admin Tester account: Proctoring bypassed.",
+            "cheating_likelihood": "Unlikely",
+            "proctoring_verdict": "Passed Proctoring"
+        }
+        return
+
+    # Hidden proctoring button container
+    st.markdown('<div class="hidden-proctor-btn">', unsafe_allow_html=True)
+    if st.button("Proctoring Tab Switch Trigger", key="tab_switch_trigger_btn"):
+        st.session_state.tab_switches = st.session_state.get("tab_switches", 0) + 1
+        
+        import datetime
+        now_str = datetime.datetime.now().strftime("%H:%M:%S")
+        warnings_list = st.session_state.setdefault("proctoring_warnings", [])
+        warnings_list.append(now_str)
+        
+        if st.session_state.tab_switches >= 4:
+            st.session_state.proctoring_violated = True
+            
+            if st.session_state.stage == "mcq":
+                temp_answers = st.session_state.get("mcq_answers", {})
+                score, pct, results = MCQAgent.grade_answers(st.session_state.mcqs, temp_answers)
+                st.session_state.mcq_score = score
+                st.session_state.mcq_passed = False
+                st.session_state.stage = "mcq_failed_screen"
+                run_proctoring_analysis()
+                log_candidate_state(status_override="Auto-Submitted (Proctoring Violation)")
+                st.rerun()
+            elif st.session_state.stage == "interview":
+                st.session_state.interview_concluded = True
+                try:
+                    interview_agent = InterviewAgent()
+                    eval_res = interview_agent.evaluate(
+                        resume_text=st.session_state.resume_text,
+                        job_role=st.session_state.job_role,
+                        experience=st.session_state.experience,
+                        job_description=st.session_state.job_description,
+                        conversation_history=st.session_state.chat_history
+                    )
+                    eval_res.selected = False
+                    eval_res.recommendation = "DISQUALIFIED: Proctoring Violations (Multiple Tab Switches detected)."
+                    eval_res.summary_for_candidate = "Assessment terminated automatically due to repeated tab-switching violations."
+                    st.session_state.evaluation_result = eval_res
+                except Exception as e:
+                    pass
+                st.session_state.stage = "final_evaluation"
+                run_proctoring_analysis()
+                log_candidate_state(status_override="Auto-Submitted (Proctoring Violation)")
+                st.rerun()
+        else:
+            log_candidate_state()
+            st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.components.v1.html(f"""
+    <script>
+        const doc = window.parent.document;
+        
+        // Synchronize JS switches with python state
+        window.parent.__js_tab_switches__ = {st.session_state.tab_switches};
+        
+        // Track mouse coordinates globally
+        if (!window.parent.__mouse_move_listener_added_v3__) {{
+            window.parent.__mouse_move_listener_added_v3__ = true;
+            doc.addEventListener('mousemove', function(e) {{
+                window.parent.__last_mouse_x__ = e.clientX;
+                window.parent.__last_mouse_y__ = e.clientY;
+            }});
+        }}
+        
+        // Define or update showCursorNotification on parent window
+        window.parent.showCursorNotification = function(message, isCrit) {{
+            let popup = doc.getElementById('proctor-cursor-popup');
+            if (popup) {{
+                popup.remove();
+            }}
+            popup = doc.createElement('div');
+            popup.id = 'proctor-cursor-popup';
+            popup.style.position = 'fixed';
+            
+            const x = window.parent.__last_mouse_x__ !== undefined ? window.parent.__last_mouse_x__ : (window.parent.innerWidth / 2 - 150);
+            const y = window.parent.__last_mouse_y__ !== undefined ? window.parent.__last_mouse_y__ : (window.parent.innerHeight / 2 - 50);
+            
+            popup.style.left = (x + 15) + 'px';
+            popup.style.top = (y + 15) + 'px';
+            popup.style.zIndex = '9999999';
+            popup.style.background = isCrit ? 'rgba(239, 68, 68, 0.98)' : 'rgba(245, 158, 11, 0.98)';
+            popup.style.color = '#ffffff';
+            popup.style.padding = '14px 22px';
+            popup.style.borderRadius = '12px';
+            popup.style.boxShadow = isCrit ? '0 10px 30px rgba(239, 68, 68, 0.5)' : '0 10px 30px rgba(245, 158, 11, 0.5)';
+            popup.style.fontFamily = "'Outfit', sans-serif";
+            popup.style.fontSize = '0.92rem';
+            popup.style.fontWeight = '600';
+            popup.style.border = '1px solid rgba(255, 255, 255, 0.25)';
+            popup.style.pointerEvents = 'none';
+            popup.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            popup.style.transform = 'translateY(15px)';
+            popup.style.opacity = '0';
+            
+            popup.innerHTML = `⚠️ ` + message;
+            doc.body.appendChild(popup);
+            
+            setTimeout(() => {{
+                popup.style.transform = 'translateY(0)';
+                popup.style.opacity = '1';
+            }}, 50);
+            
+            setTimeout(() => {{
+                popup.style.opacity = '0';
+                popup.style.transform = 'translateY(-15px)';
+                setTimeout(() => {{
+                    popup.remove();
+                }}, 400);
+            }}, 4000);
+        }};
+        
+        // Setup direct style injection on parent document to hide the proctoring trigger button
+        let proctorStyle = doc.getElementById('proctoring-hide-style');
+        if (!proctorStyle) {{
+            proctorStyle = doc.createElement('style');
+            proctorStyle.id = 'proctoring-hide-style';
+            proctorStyle.innerHTML = `
+                div[data-testid="element-container"]:has(button:has(span:contains("Proctoring Tab Switch Trigger"))),
+                button:has(span:contains("Proctoring Tab Switch Trigger")),
+                button[key="tab_switch_trigger_btn"] {{
+                    display: none !important;
+                    height: 0px !important;
+                    width: 0px !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    overflow: hidden !important;
+                }}
+            `;
+            doc.head.appendChild(proctorStyle);
+        }}
+        
+        // Programmatically hide the button and its container immediately
+        function hideProctorBtn() {{
+            const buttons = Array.from(doc.querySelectorAll('button'));
+            const triggerBtn = buttons.find(btn => btn.innerText && btn.innerText.includes('Proctoring Tab Switch Trigger'));
+            if (triggerBtn) {{
+                triggerBtn.style.setProperty('display', 'none', 'important');
+                const container = triggerBtn.closest('[data-testid="element-container"]');
+                if (container) {{
+                    container.style.setProperty('display', 'none', 'important');
+                    container.style.setProperty('height', '0px', 'important');
+                    container.style.setProperty('margin', '0px', 'important');
+                    container.style.setProperty('padding', '0px', 'important');
+                }}
+            }}
+        }}
+        
+        hideProctorBtn();
+        if (window.parent.__proctor_hide_interval_v3__) {{
+            clearInterval(window.parent.__proctor_hide_interval_v3__);
+        }}
+        window.parent.__proctor_hide_interval_v3__ = setInterval(hideProctorBtn, 100);
+        
+        if (window.parent.__last_tab_switch_time__ === undefined) {{
+            window.parent.__last_tab_switch_time__ = 0;
+        }}
+        
+        // Global independent trigger handler in parent document scope
+        window.parent.__handle_proctor_tab_switch__ = function() {{
+            const now = Date.now();
+            if (now - window.parent.__last_tab_switch_time__ > 2000) {{ // 2s de-bounce
+                window.parent.__last_tab_switch_time__ = now;
+                
+                window.parent.__js_tab_switches__ = (window.parent.__js_tab_switches__ || 0) + 1;
+                const switches = window.parent.__js_tab_switches__;
+                
+                if (window.parent.showCursorNotification) {{
+                    if (switches <= 3) {{
+                        window.parent.showCursorNotification(`PROCTORING WARNING (${switches}/3): Focus loss detected. Keep your cursor inside the test area!`, false);
+                    }} else {{
+                        window.parent.showCursorNotification(`TEST SUSPENDED: Auto-submitting due to proctoring violation limit.`, true);
+                    }}
+                }}
+                
+                const buttons = Array.from(doc.querySelectorAll('button'));
+                const triggerBtn = buttons.find(btn => btn.innerText && btn.innerText.includes('Proctoring Tab Switch Trigger'));
+                if (triggerBtn) {{
+                    triggerBtn.click();
+                }}
+            }}
+        }};
+        
+        // Setup visibility and blur listeners on parent that call the persistent window.parent handler
+        if (!window.parent.__visibility_listener_added_v4__) {{
+            window.parent.__visibility_listener_added_v4__ = true;
+            doc.addEventListener('visibilitychange', function() {{
+                if (doc.visibilityState === 'hidden' && window.parent.__handle_proctor_tab_switch__) {{
+                    window.parent.__handle_proctor_tab_switch__();
+                }}
+            }});
+        }}
+        
+        if (!window.parent.__blur_listener_added_v4__) {{
+            window.parent.__blur_listener_added_v4__ = true;
+            window.parent.addEventListener('blur', function() {{
+                if (window.parent.__handle_proctor_tab_switch__) {{
+                    window.parent.__handle_proctor_tab_switch__();
+                }}
+            }});
+        }}
+    </script>
+    """, height=0)
+
 def log_candidate_state(status_override=None):
     name = st.session_state.get("candidate_name", "").strip()
     email = st.session_state.get("candidate_email", "").strip()
@@ -1726,6 +2132,8 @@ def log_candidate_state(status_override=None):
         friendly_status = "Cleared Screening"
     elif status == "screening_failed":
         friendly_status = "Disqualified in Screening"
+    elif status == "proctoring_instruction":
+        friendly_status = "Reviewing Assessment Rules"
     elif status == "mcq":
         friendly_status = "Taking Technical MCQ"
     elif status == "mcq_passed_screen":
@@ -1758,8 +2166,11 @@ def log_candidate_state(status_override=None):
         "name": name,
         "email": email,
         "phone": phone,
+        "password": st.session_state.get("candidate_password", ""),
         "job_role": role,
         "experience": exp,
+        "job_description": st.session_state.get("job_description", ""),
+        "stage": stage,
         "status": friendly_status,
         "screening_reason": screening_reason,
         "match_score": match_score,
@@ -1768,9 +2179,18 @@ def log_candidate_state(status_override=None):
         "red_flags": red_flags,
         "mcq_score": f"{mcq_score}/5" if stage in ["mcq", "mcq_passed_screen", "mcq_failed_screen", "interview", "final_evaluation"] else "N/A",
         "selection": selection_rec,
+        "eval_selected": eval_res.selected if eval_res and hasattr(eval_res, "selected") else False,
+        "overall_feedback": eval_res.overall_feedback if eval_res and hasattr(eval_res, "overall_feedback") else "",
         "summary": eval_summary,
         "chat_history": st.session_state.get("chat_history", []),
-        "timestamp": timestamp
+        "resume_text": st.session_state.get("resume_text", ""),
+        "mcqs": [q.dict() if hasattr(q, "dict") else q for q in st.session_state.get("mcqs", [])],
+        "mcq_answers": st.session_state.get("mcq_answers", {}),
+        "timestamp": timestamp,
+        "tab_switches": st.session_state.get("tab_switches", 0),
+        "proctoring_warnings": st.session_state.get("proctoring_warnings", []),
+        "proctoring_violated": st.session_state.get("proctoring_violated", False),
+        "proctoring_report": st.session_state.get("proctoring_report", None)
     }
     
     try:
@@ -1780,6 +2200,8 @@ def log_candidate_state(status_override=None):
             if rec.get("email", "").strip().lower() == email.strip().lower():
                 is_new_registration = (stage == "upload" or status == "Profile Uploaded")
                 candidate_data["allowed_retake"] = False if is_new_registration else rec.get("allowed_retake", False)
+                if not candidate_data["password"]:
+                    candidate_data["password"] = rec.get("password", "")
                 records[idx] = candidate_data
                 updated = True
                 break
@@ -1862,6 +2284,18 @@ if "mcq_passed" not in st.session_state:
     st.session_state.mcq_passed = False
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
+if "tab_switches" not in st.session_state:
+    st.session_state.tab_switches = 0
+if "proctoring_warnings" not in st.session_state:
+    st.session_state.proctoring_warnings = []
+if "proctoring_violated" not in st.session_state:
+    st.session_state.proctoring_violated = False
+if "proctoring_report" not in st.session_state:
+    st.session_state.proctoring_report = None
+if "candidate_logged_in" not in st.session_state:
+    st.session_state.candidate_logged_in = False
+if "candidate_user_email" not in st.session_state:
+    st.session_state.candidate_user_email = ""
 if "interview_concluded" not in st.session_state:
     st.session_state.interview_concluded = False
 if "evaluation_result" not in st.session_state:
@@ -2078,6 +2512,7 @@ elif page == "🔒 Recruiter Portal":
                         
     with portal_tab2:
         st.subheader("Recruiter Analytics & Leaderboard")
+        st.info("💡 **Candidate Testing Hint**: To evaluate candidate-side features (MCQs, Interview, Proctoring) without signing up or uploading resumes, use these pre-screened tester credentials in the Candidate Assessment tab:\n*   **Email Address**: `admin@test.com`\n*   **Password**: `admin`")
         render_candidate_hub()
                         
     with portal_tab3:
@@ -2173,14 +2608,80 @@ elif page == "🔒 Recruiter Portal":
                             <strong>Issue Reported:</strong> <em>"{t.get('message')}"</em>
                         </div>
                         <div style="background-color: rgba(16, 185, 129, 0.05); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
-                            <strong style="color: #10b981; font-size: 0.95rem;">🤖 AI Justification & Action:</strong><br>
-                            <p style="margin-top: 5px; margin-bottom: 5px; font-size: 0.95rem; color: var(--text-sub);">{t.get('resolution_log')}</p>
-                            <strong>Confidence Score:</strong> <code>{int(t.get('confidence_score', 0.0) * 100)}%</code>
+                            <strong style="color: #10b981; font-size: 0.95rem;">\U0001F916 AI Justification & Action:</strong><br>
+                            <strong>AI Diagnosis:</strong> {t.get('diagnosis')}<br>
+                            <strong>AI Action Notification:</strong> {t.get('candidate_notification')}<br>
+                            <strong>Justification:</strong> <em>{t.get('justification')}</em>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
+        st.stop()
 
-    st.stop()
+# Hydrate Streamlit session state from JSON record on candidate login
+def load_candidate_session(email):
+    records = load_candidates()
+    matched = None
+    for r in records:
+        if r.get("email", "").strip().lower() == email.strip().lower():
+            matched = r
+            break
+            
+    if matched:
+        st.session_state.candidate_name = matched.get("name", "")
+        st.session_state.candidate_email = matched.get("email", "")
+        st.session_state.candidate_phone = matched.get("phone", "")
+        st.session_state.candidate_password = matched.get("password", "")
+        st.session_state.job_role = matched.get("job_role", "")
+        st.session_state.experience = matched.get("experience", "")
+        st.session_state.job_description = matched.get("job_description", "")
+        if not st.session_state.job_description:
+            st.session_state.job_description = PREDEFINED_JDS.get(st.session_state.job_role, "")
+        st.session_state.resume_text = matched.get("resume_text", "")
+        st.session_state.stage = matched.get("stage", "upload")
+        st.session_state.tab_switches = matched.get("tab_switches", 0)
+        st.session_state.proctoring_warnings = matched.get("proctoring_warnings", [])
+        st.session_state.proctoring_violated = matched.get("proctoring_violated", False)
+        st.session_state.proctoring_report = matched.get("proctoring_report", None)
+        
+        # Load screening result
+        if matched.get("screening_reason"):
+            from src.models.schemas import ScreeningResult
+            st.session_state.screening_result = ScreeningResult(
+                qualified=True,
+                reason=matched.get("screening_reason", ""),
+                match_score=matched.get("match_score", 0),
+                matched_skills=matched.get("matched_skills", []),
+                missing_skills=matched.get("missing_skills", []),
+                red_flags=matched.get("red_flags", [])
+            )
+            
+        # Load MCQs
+        from src.models.schemas import MCQItem
+        saved_mcqs = matched.get("mcqs", [])
+        st.session_state.mcqs = [MCQItem(**q) for q in saved_mcqs]
+        st.session_state.mcq_answers = matched.get("mcq_answers", {})
+        
+        # Reload MCQ score
+        mcq_score_str = matched.get("mcq_score", "N/A")
+        if mcq_score_str != "N/A" and "/" in mcq_score_str:
+            try:
+                st.session_state.mcq_score = int(mcq_score_str.split("/")[0])
+                st.session_state.mcq_passed = st.session_state.mcq_score >= 3
+            except:
+                st.session_state.mcq_score = 0
+                
+        # Reload Interview Dialogue History
+        st.session_state.chat_history = matched.get("chat_history", [])
+        st.session_state.interview_concluded = matched.get("stage", "") in ["final_evaluation"] or matched.get("status", "") == "Interview Finished" or matched.get("status", "") == "Auto-Submitted (Proctoring Violation)"
+        
+        # Reload Final evaluation results
+        if matched.get("selection") != "N/A":
+            from src.models.schemas import FinalEvaluation
+            st.session_state.evaluation_result = FinalEvaluation(
+                selected=matched.get("eval_selected", False),
+                overall_feedback=matched.get("overall_feedback", ""),
+                summary_for_candidate=matched.get("summary", "")
+            )
 
 # Helper function to reset candidate progress
 def restart_process():
@@ -2193,118 +2694,477 @@ def restart_process():
     st.session_state.evaluation_result = None
     st.session_state.email_sent = False
     st.session_state.call_sent = False
+    st.session_state.tab_switches = 0
+    st.session_state.proctoring_warnings = []
+    st.session_state.proctoring_violated = False
+    st.session_state.proctoring_report = None
+    st.session_state.candidate_logged_in = False
+    st.session_state.candidate_user_email = ""
     st.rerun()
 
-# Render candidate progress stepper
-render_stepper(st.session_state.stage)
+# Render Candidate login and registration portal tabs
+def render_candidate_auth_portal():
+    st.markdown("""
+    <div class="glass-card" style="text-align: center; margin-bottom: 25px; border-top: 4px solid var(--accent-red); padding: 25px !important;">
+        <div class="recruit-header" style="font-size: 2rem; margin-bottom: 5px; color: var(--text-main);">🧑 Candidate Assessment Portal</div>
+        <div style="color: var(--text-sub); font-size: 0.95rem;">Log in to track your application, complete assessments, or register to apply.</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    auth_tab_login, auth_tab_signup = st.tabs(["🔐 Log In to My Profile", "📝 Create New Application"])
+    
+    with auth_tab_login:
+        st.write("### Log In")
+        with st.form("candidate_login_form"):
+            login_email = st.text_input("Registered Email Address", placeholder="name@example.com")
+            login_password = st.text_input("Password", type="password")
+            login_submit = st.form_submit_button("Log In", use_container_width=True)
+            
+            if login_submit:
+                if not login_email.strip() or not login_password.strip():
+                    st.error("Please enter both email and password.")
+                else:
+                    records = load_candidates()
+                    matched = None
+                    for r in records:
+                        if r.get("email", "").strip().lower() == login_email.strip().lower():
+                            matched = r
+                            break
+                    if matched:
+                        if matched.get("password") == login_password:
+                            st.session_state.candidate_logged_in = True
+                            st.session_state.candidate_user_email = matched.get("email")
+                            load_candidate_session(matched.get("email"))
+                            st.success("Welcome back! Loading your profile...")
+                            time.sleep(0.5)
+                            st.rerun()
+                        else:
+                            st.error("Invalid password. Please try again.")
+                    else:
+                        st.error("No application found with this email. Please switch to the Sign Up tab to create one.")
+                        
+    with auth_tab_signup:
+        st.write("### Sign Up & Apply")
+        candidate_name = st.text_input("Full Name", placeholder="John Doe", key="signup_name")
+        candidate_email = st.text_input("Email Address", placeholder="john.doe@example.com", key="signup_email")
+        candidate_phone = st.text_input("Phone Number", placeholder="+1234567890", key="signup_phone")
+        candidate_password = st.text_input("Create Password", type="password", key="signup_password")
+        
+        selected_role = st.selectbox("Applying For Job Role", list(PREDEFINED_JDS.keys()), key="signup_role_select")
+        if selected_role == "Custom / Write your own":
+            job_role = st.text_input("Custom Job Role Name", placeholder="e.g. DevOps Engineer", key="signup_custom_role")
+            job_description = st.text_area("Job Description Details", height=150, placeholder="Paste requirements here...", key="signup_custom_jd")
+        else:
+            job_role = selected_role
+            job_description = PREDEFINED_JDS[selected_role]
+            
+        experience = st.selectbox("Total Experience / Candidate Level", ["Entry Level (0-2 years)", "Mid Level (3-5 years)", "Senior Level (5+ years)"], key="signup_experience")
+        uploaded_file = st.file_uploader("Upload Resume (PDF format)", type=["pdf"], key="signup_resume")
+        
+        if st.button("Apply & Start Screening", key="signup_submit_btn"):
+            if not candidate_name.strip() or not candidate_email.strip() or not candidate_password.strip():
+                st.error("Please fill in your name, email, and password.")
+            elif not job_role.strip():
+                st.error("Please specify the Job Role.")
+            elif not job_description.strip():
+                st.error("Please provide a job description.")
+            elif not uploaded_file:
+                st.error("Please upload your resume in PDF format.")
+            else:
+                duplicate_record = check_duplicate_candidate(candidate_email)
+                if duplicate_record:
+                    st.error("An application with this email already exists. Please switch to the Log In tab.")
+                else:
+                    with st.spinner("Extracting text from resume..."):
+                        try:
+                            resume_text = ResumeParser.extract_text(uploaded_file)
+                            st.session_state.candidate_name = candidate_name
+                            st.session_state.candidate_email = candidate_email
+                            st.session_state.candidate_phone = candidate_phone
+                            st.session_state.candidate_password = candidate_password
+                            st.session_state.job_role = job_role
+                            st.session_state.experience = experience
+                            st.session_state.job_description = job_description
+                            st.session_state.resume_text = resume_text
+                        except Exception as e:
+                            st.error(f"Error parsing resume: {str(e)}")
+                            st.stop()
+                            
+                    with st.spinner("Initial Screening Agent checking eligibility..."):
+                        try:
+                            screening_agent = ScreeningAgent()
+                            res = screening_agent.run(
+                                resume_text=st.session_state.resume_text,
+                                job_role=st.session_state.job_role,
+                                experience=st.session_state.experience,
+                                job_description=st.session_state.job_description
+                            )
+                            st.session_state.screening_result = res
+                            
+                            if res.qualified:
+                                st.session_state.stage = "proctoring_instruction"
+                            else:
+                                st.session_state.stage = "screening_failed"
+                            
+                            st.session_state.candidate_logged_in = True
+                            st.session_state.candidate_user_email = candidate_email
+                            st.session_state.candidate_password = candidate_password
+                            
+                            log_candidate_state()
+                            st.success("Application successfully submitted!")
+                            time.sleep(0.5)
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error during screening: {str(e)}")
 
-# ----------------- STAGE 1: REGISTRATION AND RESUME UPLOAD -----------------
-if st.session_state.stage == "upload":
-    if st.session_state.get("support_resolved_message"):
-        msg = st.session_state.get("support_resolved_message")
+# Render Candidate dashboard hub
+def render_candidate_hub_portal():
+    # Defensive safety net: if candidate is logged in but stage is 'upload', auto-advance to rules screen
+    if st.session_state.get("stage", "upload") == "upload":
+        st.session_state.stage = "proctoring_instruction"
+        log_candidate_state()
+        st.rerun()
+        
+    name = st.session_state.get("candidate_name", "Candidate")
+    email = st.session_state.get("candidate_email", "")
+    role = st.session_state.get("job_role", "")
+    stage = st.session_state.get("stage", "upload")
+    
+    col_hdr, col_logout = st.columns([3, 1])
+    with col_hdr:
         st.markdown(f"""
-        <div class="glass-card" style="border-left: 6px solid #10b981; padding: 25px; text-align: center;">
-            <div style="font-size: 3rem; margin-bottom: 15px;">🎉</div>
-            <h3 style="color: #10b981; margin-top: 0; font-weight: 700; font-size: 1.45rem;">Access Reset Successfully</h3>
-            <p style="color: #475569; font-size: 0.95rem; line-height: 1.6;">
-                The AI Auto-Resolver has processed and approved your support request:
-            </p>
-            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: left; color: #1e293b;">
-                <strong>🤖 AI Support Agent:</strong><br>
-                <p style="margin-top: 8px; margin-bottom: 0; font-style: italic; line-height: 1.5;">"{msg}"</p>
-            </div>
-            <p style="font-size: 0.9rem; color: #64748b; line-height: 1.5;">
-                You can now register again and retake your test immediately.
-            </p>
+        <div class="glass-card" style="margin-bottom: 0px; padding: 15px 20px !important; border-left: 6px solid var(--accent-red);">
+            <div class="stage-title" style="margin: 0; font-size: 1.5rem; color: var(--text-main);">🧑 Candidate Hub: {name}</div>
+            <span style="color: var(--text-sub); font-size: 0.9rem;">Target Position: <strong>{role}</strong> | Account: {email}</span>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Proceed to Re-apply / Retake"):
-            del st.session_state.support_resolved_message
-            st.session_state.duplicate_blocked = False
-            st.session_state.duplicate_candidate = None
-            st.rerun()
-        st.stop()
-
-    if st.session_state.get("support_pending_message"):
-        msg = st.session_state.get("support_pending_message")
-        st.markdown(f"""
-        <div class="glass-card" style="border-left: 6px solid #f59e0b; padding: 25px; text-align: center;">
-            <div style="font-size: 3rem; margin-bottom: 15px;">📥</div>
-            <h3 style="color: #f59e0b; margin-top: 0; font-weight: 700; font-size: 1.45rem;">Support Request Submitted</h3>
-            <p style="color: #475569; font-size: 0.95rem; line-height: 1.6;">
-                Your support request has been logged and queued for recruiter review:
-            </p>
-            <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: left; color: #1e293b;">
-                <strong>🤖 AI Support Agent:</strong><br>
-                <p style="margin-top: 8px; margin-bottom: 0; font-style: italic; line-height: 1.5;">"{msg}"</p>
+    with col_logout:
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        if st.button("🚪 Log Out", key="candidate_portal_logout_btn", use_container_width=True):
+            restart_process()
+            
+    st.write("")
+    
+    tab_assessment, tab_results, tab_profile_support = st.tabs(["📋 Active Assessment Loop", "📊 Results & Feedback", "🛠️ Profile & Help Center"])
+    
+    with tab_assessment:
+        st.write("### Active Assessment Progress")
+        render_stepper(stage)
+        st.write("")
+        
+        if stage == "proctoring_instruction":
+            render_proctoring_instruction_stage()
+        elif stage == "mcq":
+            render_proctoring_elements()
+            render_mcq_stage()
+        elif stage == "mcq_passed_screen":
+            st.markdown(f"""
+            <div class="glass-card" style="border-left: 5px solid #10b981;">
+                <div class="stage-title" style="border-left: none; padding-left: 0; color: #059669;">MCQ Screening Passed</div>
+                <div style="color: #059669; font-weight: 600; margin-bottom: 10px; font-size: 1.1rem;">🎉 Great job! You scored {st.session_state.mcq_score}/5 ({st.session_state.mcq_score * 20}%).</div>
+                <p style="color: #475569; margin-bottom: 0;">You have successfully passed the MCQ barrier and are eligible for the <strong>Interactive Technical Interview Round</strong>. Click below to start your interview.</p>
             </div>
-            <p style="font-size: 0.9rem; color: #64748b; line-height: 1.5;">
-                A human coordinator will review your request shortly. You will be notified once a decision is made.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Go Back to Form"):
-            del st.session_state.support_pending_message
-            st.session_state.duplicate_blocked = False
-            st.session_state.duplicate_candidate = None
-            st.rerun()
-        st.stop()
-
-    if st.session_state.get("duplicate_blocked"):
-        dup = st.session_state.get("duplicate_candidate", {})
-        st.markdown(f"""
-        <div class="glass-card" style="border-left: 6px solid #ef4444; padding: 25px;">
-            <h3 style="color: #ef4444; margin-top: 0; font-weight: 700; font-size: 1.45rem;">⚠️ Assessment Already Attempted</h3>
-            <p style="color: var(--text-sub); font-size: 0.95rem; line-height: 1.6;">
-                Our records show that a candidate with the email <strong>{dup.get('email')}</strong> has already registered or completed an assessment.
-            </p>
-            <div style="background-color: var(--badge-red-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; margin: 20px 0; color: var(--text-main);">
-                <strong style="color: #ef4444; font-size: 1rem;">Previous Application Summary:</strong><br>
-                <div style="margin-top: 10px; font-size: 0.95rem; line-height: 1.8;">
-                    • <strong>Candidate Name:</strong> {dup.get('name')}<br>
-                    • <strong>Target Role:</strong> {dup.get('job_role')}<br>
-                    • <strong>Pipeline Stage:</strong> <span style="background-color: var(--badge-red-bg); color: #ef4444; padding: 2px 8px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;">{dup.get('status')}</span><br>
-                    • <strong>Date Submitted:</strong> {dup.get('timestamp')}
+            """, unsafe_allow_html=True)
+            
+            if st.button("Proceed to Technical Interview", key="dashboard_proceed_to_interview_btn", use_container_width=True):
+                st.session_state.stage = "interview"
+                st.session_state.chat_history = [
+                    {"role": "assistant", "content": f"Hello {st.session_state.candidate_name}. Welcome to your technical interview for the {st.session_state.job_role} role. Let's start with a very basic question: What is Machine Learning, and what are the main types of Machine Learning?"}
+                ]
+                log_candidate_state()
+                st.rerun()
+                
+        elif stage == "mcq_failed_screen":
+            st.markdown(f"""
+            <div class="glass-card" style="border-left: 5px solid #ef4444;">
+                <div class="stage-title" style="border-left: none; padding-left: 0; color: #b91c1c;">MCQ Screening Failed</div>
+                <div style="color: #b91c1c; font-weight: 600; margin-bottom: 10px; font-size: 1.1rem;">You scored {st.session_state.mcq_score}/5. The passing score is at least 3/5.</div>
+                <p style="color: #475569; margin-bottom: 0;">Unfortunately, we cannot proceed with your application at this time.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            st.info("If you faced technical issues, please submit a ticket in the 'Profile & Help Center' tab for review.")
+            
+        elif stage == "interview":
+            render_proctoring_elements()
+            render_interview_stage()
+            
+        elif stage == "final_evaluation":
+            st.markdown("""
+            <div class="glass-card" style="margin-bottom: 20px;">
+                <div class="stage-title">Final Interview Assessment Completed</div>
+            </div>
+            """, unsafe_allow_html=True)
+            eval_res = st.session_state.get("evaluation_result")
+            if eval_res and eval_res.selected:
+                st.markdown('<h3 style="color: #10b981;">Selection Status: SELECTED</h3>', unsafe_allow_html=True)
+                st.success(f"Congratulations {st.session_state.candidate_name}! You have passed the final technical interview round.")
+                
+                st.write("**Evaluation Summary:**")
+                st.info(eval_res.summary_for_candidate)
+                
+                # Outbound voice dispatch
+                if not st.session_state.call_sent and st.session_state.candidate_phone:
+                    if st.session_state.candidate_email == "admin@test.com":
+                        st.session_state.call_sent = True
+                    else:
+                        with st.spinner("Initiating automated voice dispatch..."):
+                            try:
+                                from src.agents.shared_agents.elevenlabs_agent import ElevenLabsAgent
+                                voice_agent = ElevenLabsAgent()
+                                voice_agent.trigger_outbound_call(
+                                    to_number=st.session_state.candidate_phone.strip(),
+                                    candidate_name=st.session_state.candidate_name,
+                                    company_name="Hackathon"
+                                )
+                                st.session_state.call_sent = True
+                            except:
+                                st.session_state.call_sent = True
+                
+                # SMTP Email dispatch
+                if not st.session_state.email_sent:
+                    if st.session_state.candidate_email == "admin@test.com":
+                        st.session_state.email_sent = True
+                    else:
+                        with st.spinner("Sending confirmation email..."):
+                            try:
+                                email_agent = EmailAgent()
+                                email_agent.run(
+                                    recipient_email=st.session_state.candidate_email,
+                                    job_role=st.session_state.job_role,
+                                    feedback_summary=eval_res.summary_for_candidate
+                                )
+                                st.session_state.email_sent = True
+                            except:
+                                st.session_state.email_sent = True
+                                
+                st.info("📅 **Next Steps**: You will receive a communication email or call shortly from our talent acquisition team with further instructions.")
+            else:
+                st.markdown('<h3 style="color: #ef4444;">Selection Status: NOT SELECTED</h3>', unsafe_allow_html=True)
+                st.error(f"Thank you for your time, {st.session_state.candidate_name}. You were not selected for the next round.")
+                if eval_res:
+                    st.write("**Evaluation Feedback Summary:**")
+                    st.warning(eval_res.summary_for_candidate)
+                    
+        elif stage == "screening_failed":
+            st.markdown(f"""
+            <div class="glass-card" style="border-left: 5px solid #ef4444;">
+                <div class="stage-title" style="border-left: none; padding-left: 0; color: #b91c1c;">Screening Status: Disqualified</div>
+                <div style="color: #b91c1c; font-weight: 600; margin-bottom: 12px; font-size: 1.1rem;">Thank you for applying. Unfortunately, your profile does not meet our minimum requirements for this position.</div>
+                <div style="font-weight: 600; margin-bottom: 6px; color: #1e293b;">Evaluation Feedback:</div>
+                <div style="background-color: #fdf2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 15px; font-size: 0.95rem; color: #1f2937; line-height: 1.5;">
+                    {st.session_state.screening_result.reason if st.session_state.screening_result else "No details available."}
                 </div>
             </div>
-            <p style="font-size: 0.95rem; color: var(--text-sub); line-height: 1.5; margin-bottom: 0;">
-                To ensure a fair evaluation process, multiple attempts are not permitted. If you encountered technical difficulties, please connect with your recruiter for better understanding or to request an assessment reset.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Report form section
-        with st.container(border=True):
-            st.markdown('<h4 style="margin-top: 0; color: var(--text-main);">🛠️ Having Technical Issues or Need a Retake?</h4>', unsafe_allow_html=True)
-            st.write("Describe what issue you faced (e.g. system crashed, internet disconnected, audio issues). The AI Support Agent will diagnose your request and notify the recruiter.")
+            """, unsafe_allow_html=True)
             
-            with st.form("support_request_form"):
-                reported_msg = st.text_area("Detail your issue here...", placeholder="Explain exactly what happened, and why you need to retake the assessment...", height=120)
-                submit_ticket = st.form_submit_button("Submit Help Request")
+    with tab_results:
+        st.write("### Application Results & Performance Analysis")
+        records = load_candidates()
+        matched = None
+        for r in records:
+            if r.get("email", "").strip().lower() == email.strip().lower():
+                matched = r
+                break
+        
+        if not matched:
+            st.info("No assessment records found.")
+        else:
+            status = matched.get("status", "Applied")
+            status_badge_html = ""
+            if "Failed" in status or "Disqualified" in status or "Violation" in status:
+                status_badge_html = f'<span style="background-color: rgba(239, 68, 68, 0.12); color: #ef4444; padding: 3px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">🔴 {status}</span>'
+            elif "Finished" in status or "Passed" in status:
+                status_badge_html = f'<span style="background-color: rgba(16, 185, 129, 0.12); color: #10b981; padding: 3px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">🟢 {status}</span>'
+            else:
+                status_badge_html = f'<span style="background-color: rgba(245, 158, 11, 0.12); color: #f59e0b; padding: 3px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">🟡 {status}</span>'
+            
+            col_res1, col_res2 = st.columns(2)
+            with col_res1:
+                st.markdown(f"📌 **Current Pipeline Status**: {status_badge_html}", unsafe_allow_html=True)
+                st.write(f"💼 **Target Position**: {matched.get('job_role')}")
+                st.write(f"⏳ **Experience Level**: {matched.get('experience')}")
+            with col_res2:
+                st.write(f"📊 **MCQ Score**: `{matched.get('mcq_score')}`")
+                trust_score = matched.get("proctoring_report", {}).get("trust_score", 100) if matched.get("proctoring_report") else max(0, 100 - matched.get("tab_switches", 0) * 25)
+                st.write(f"🛡️ **Proctoring Trust Score**: `{trust_score}%`")
+                
+            st.write("---")
+            
+            match_score = int(matched.get("match_score", 0))
+            st.write(f"**AI Match Score against Job Requirements**: **{match_score}%**")
+            st.progress(match_score / 100.0)
+            st.write("")
+            
+            col_sk1, col_sk2 = st.columns(2)
+            with col_sk1:
+                matched_skills = matched.get("matched_skills", [])
+                if matched_skills:
+                    st.write("✅ **Your Matched Skills:**")
+                    tags_html = "".join([f'<span style="background-color: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; margin-right: 8px; display: inline-block; margin-bottom: 5px; font-weight: 500;">{skill}</span>' for skill in matched_skills])
+                    st.markdown(tags_html, unsafe_allow_html=True)
+            with col_sk2:
+                missing_skills = matched.get("missing_skills", [])
+                if missing_skills:
+                    st.write("⚠️ **Suggested Missing Skills to Improve:**")
+                    tags_html = "".join([f'<span style="background-color: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; margin-right: 8px; display: inline-block; margin-bottom: 5px; font-weight: 500;">{skill}</span>' for skill in missing_skills])
+                    st.markdown(tags_html, unsafe_allow_html=True)
+                    
+            st.write("---")
+            
+            if matched.get("summary"):
+                st.write("##### 🗣️ Hiring Committee Constructive Feedback")
+                st.info(matched.get("summary"))
+            elif matched.get("screening_reason") and "Disqualified" in status:
+                st.write("##### 🗣️ Screening Feedback")
+                st.warning(matched.get("screening_reason"))
+            else:
+                st.info("Final feedback summary will be generated once you complete the technical interview round.")
+                
+    with tab_profile_support:
+        st.write("### Candidate Profile & Support Desk")
+        
+        with st.container(border=True):
+            st.write("#### 🧑 My Registered Details")
+            st.write(f"• **Full Name**: {name}")
+            st.write(f"• **Email**: {email}")
+            st.write(f"• **Phone Number**: {st.session_state.get('candidate_phone', '')}")
+            
+            if email == "admin@test.com":
+                st.info("⚙️ **Tester Account Options**: Since you are using the pre-configured admin tester account, you can reset its test stage and answers at any time to repeat testing.")
+                if st.button("🔄 Reset Admin Tester Assessment State", key="admin_tester_hard_reset_btn", use_container_width=True):
+                    st.session_state.stage = "proctoring_instruction"
+                    st.session_state.mcqs = []
+                    st.session_state.mcq_answers = {}
+                    st.session_state.chat_history = []
+                    st.session_state.interview_concluded = False
+                    st.session_state.evaluation_result = None
+                    st.session_state.tab_switches = 0
+                    st.session_state.proctoring_warnings = []
+                    st.session_state.proctoring_violated = False
+                    st.session_state.proctoring_report = None
+                    
+                    st.session_state.duplicate_blocked = False
+                    st.session_state.duplicate_candidate = None
+                    
+                    # Update candidates.json
+                    records = load_candidates()
+                    for rec in records:
+                        if rec.get("email", "").strip().lower() == "admin@test.com":
+                            rec["allowed_retake"] = False
+                            rec["stage"] = "proctoring_instruction"
+                            rec["status"] = "Reviewing Assessment Rules"
+                            rec["mcq_score"] = "N/A"
+                            rec["selection"] = "N/A"
+                            rec["summary"] = ""
+                            rec["chat_history"] = []
+                            rec["mcqs"] = []
+                            rec["mcq_answers"] = {}
+                            rec["tab_switches"] = 0
+                            rec["proctoring_warnings"] = []
+                            rec["proctoring_violated"] = False
+                            rec["proctoring_report"] = None
+                            break
+                    with open(CANDIDATES_FILE, "w") as f:
+                        json.dump(records, f, indent=2)
+                    st.success("Admin tester state reset successfully! Redirecting to rules...")
+                    time.sleep(0.5)
+                    st.rerun()
+            
+            retake_allowed = matched.get("allowed_retake", False)
+            if retake_allowed:
+                st.success("🔓 **Assessment Access Reset**: Recruiters have approved a retake for you! You can reset your session below to start again.")
+            
+        with st.container(border=True):
+            st.write("#### 📄 Parsed Resume Text")
+            with st.expander("Show extracted resume text content"):
+                st.text(st.session_state.get("resume_text", "No resume content parsed."))
+                
+        with st.container(border=True):
+            st.write("#### 🛠️ Help & Support Desk")
+            st.write("If you faced any system error, browser freeze, or accidental exit, request an assessment reset. The AI Support Agent will analyze your ticket and resolve it if eligible.")
+            
+            tickets = load_issues()
+            candidate_tickets = [t for t in tickets if t.get("email", "").strip().lower() == email.strip().lower()]
+            
+            if candidate_tickets:
+                st.write("##### ⏳ Your Active Support Tickets")
+                for tk in candidate_tickets:
+                    tk_status = "🟢 Auto-Resolved" if tk.get("resolved") else "🟡 Pending Recruiter Review"
+                    st.markdown(f"""
+                    <div style="background-color: var(--badge-time-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                        <strong>Ticket Status:</strong> {tk_status}<br>
+                        <strong>Issue Reported:</strong> <em>"{tk.get('message')}"</em><br>
+                        <strong>AI Diagnosis:</strong> {tk.get('diagnosis')}<br>
+                        <strong>AI Action Notification:</strong> {tk.get('candidate_notification')}
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    if tk.get("resolved") and matched.get("allowed_retake"):
+                        if st.button("🔄 Restart Assessment Session (Use Approved Reset)", key=f"restart_allowed_{tk.get('timestamp')}"):
+                            st.session_state.stage = "proctoring_instruction"
+                            st.session_state.mcqs = []
+                            st.session_state.mcq_answers = {}
+                            st.session_state.chat_history = []
+                            st.session_state.interview_concluded = False
+                            st.session_state.evaluation_result = None
+                            st.session_state.tab_switches = 0
+                            st.session_state.proctoring_warnings = []
+                            st.session_state.proctoring_violated = False
+                            st.session_state.proctoring_report = None
+                            
+                            st.session_state.duplicate_blocked = False
+                            st.session_state.duplicate_candidate = None
+                            
+                            records = load_candidates()
+                            for rec in records:
+                                if rec.get("email", "").strip().lower() == email.strip().lower():
+                                    rec["allowed_retake"] = False
+                                    rec["stage"] = "proctoring_instruction"
+                                    rec["status"] = "Reviewing Assessment Rules"
+                                    rec["mcq_score"] = "N/A"
+                                    rec["selection"] = "N/A"
+                                    rec["summary"] = ""
+                                    rec["chat_history"] = []
+                                    rec["mcqs"] = []
+                                    rec["mcq_answers"] = {}
+                                    rec["tab_switches"] = 0
+                                    rec["proctoring_warnings"] = []
+                                    rec["proctoring_violated"] = False
+                                    rec["proctoring_report"] = None
+                                    break
+                            with open(CANDIDATES_FILE, "w") as f:
+                                json.dump(records, f, indent=2)
+                                
+                            st.success("Session reset! Redirecting to rules screen...")
+                            time.sleep(0.5)
+                            st.rerun()
+            
+            with st.form("candidate_support_form"):
+                issue_desc = st.text_area("Describe your issue details...", placeholder="Provide technical details, browser details, and why you need a reset...", height=100)
+                submit_ticket = st.form_submit_button("Submit Support Ticket")
                 
                 if submit_ticket:
-                    if not reported_msg.strip():
-                        st.error("Please enter a description of the issue before submitting.")
+                    if not issue_desc.strip():
+                        st.error("Please explain your issue.")
                     else:
-                        with st.spinner("AI Support Agent is diagnosing the issue..."):
+                        with st.spinner("AI Support Agent is diagnosing ticket..."):
                             try:
                                 support_agent = SupportAgent()
                                 diagnosis_res = support_agent.run(
-                                    candidate_email=dup.get('email'),
-                                    reported_message=reported_msg.strip(),
-                                    candidate_history=dup
+                                    candidate_email=email,
+                                    reported_message=issue_desc.strip(),
+                                    candidate_history=matched
                                 )
                                 
-                                # Log issue ticket
                                 import datetime
                                 is_auto_resolved = getattr(diagnosis_res, "auto_resolve_eligible", False)
-                                cand_notif = getattr(diagnosis_res, "candidate_notification", "Your request is under review.")
+                                cand_notif = getattr(diagnosis_res, "candidate_notification", "Under review.")
                                 
                                 new_ticket = {
-                                    "email": dup.get('email'),
-                                    "name": dup.get('name'),
-                                    "job_role": dup.get('job_role'),
-                                    "message": reported_msg.strip(),
+                                    "email": email,
+                                    "name": name,
+                                    "job_role": role,
+                                    "message": issue_desc.strip(),
                                     "diagnosis": diagnosis_res.diagnosis,
                                     "severity": diagnosis_res.severity,
                                     "suggested_action": diagnosis_res.suggested_action,
@@ -2318,376 +3178,34 @@ if st.session_state.stage == "upload":
                                 }
                                 
                                 if is_auto_resolved:
-                                    # Update candidate database entry
                                     records = load_candidates()
                                     for r in records:
-                                        if r.get("email", "").strip().lower() == dup.get('email', "").strip().lower():
+                                        if r.get("email", "").strip().lower() == email.strip().lower():
                                             r["allowed_retake"] = True
                                             r["status"] = "Retake Allowed"
                                             break
-                                    try:
-                                        with open(CANDIDATES_FILE, "w") as f:
-                                            json.dump(records, f, indent=2)
-                                    except Exception:
-                                        pass
+                                    with open(CANDIDATES_FILE, "w") as f:
+                                        json.dump(records, f, indent=2)
                                 
                                 tickets = load_issues()
-                                # Replace if there's already an active ticket for this email
                                 updated = False
                                 for idx, t in enumerate(tickets):
-                                    if t.get("email", "").strip().lower() == dup.get('email', "").strip().lower() and not t.get("resolved", False):
+                                    if t.get("email", "").strip().lower() == email.strip().lower() and not t.get("resolved", False):
                                         tickets[idx] = new_ticket
                                         updated = True
                                         break
                                 if not updated:
                                     tickets.append(new_ticket)
-                                    
                                 save_issues(tickets)
                                 
-                                if is_auto_resolved:
-                                    st.session_state.support_resolved_message = cand_notif
-                                else:
-                                    st.session_state.support_pending_message = cand_notif
+                                st.success("Ticket successfully submitted! Reloading dashboard...")
+                                time.sleep(0.5)
                                 st.rerun()
                             except Exception as e:
                                 st.error(f"Support Agent error: {str(e)}")
 
-        if st.button("← Go Back to Form"):
-            st.session_state.duplicate_blocked = False
-            st.session_state.duplicate_candidate = None
-            st.rerun()
-        st.stop()
-
-    st.markdown("""
-    <div class="glass-card" style="margin-bottom: 20px;">
-        <div class="stage-title">Candidate Profile & Resume Upload</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    candidate_name = st.text_input("Full Name", placeholder="John Doe", key="candidate_name_val")
-    candidate_email = st.text_input("Email Address", placeholder="john.doe@example.com", key="candidate_email_val")
-    candidate_phone = st.text_input("Phone Number", placeholder="+1234567890", key="candidate_phone_val")
-    
-    selected_role = st.selectbox("Applying For Job Role", list(PREDEFINED_JDS.keys()), key="selected_role_val")
-    
-    # Predefined descriptions are kept in the backend; custom role displays inputs in the UI
-    if selected_role == "Custom / Write your own":
-        job_role = st.text_input("Custom Job Role Name", placeholder="e.g. DevOps Engineer", key="custom_role_val")
-        job_description = st.text_area("Job Description Details", height=150, placeholder="Paste or edit the detailed job requirements here...", key="custom_jd_val")
-    else:
-        job_role = selected_role
-        job_description = PREDEFINED_JDS[selected_role]
-        
-    experience = st.selectbox("Total Experience Required / Candidate Level", ["Entry Level (0-2 years)", "Mid Level (3-5 years)", "Senior Level (5+ years)"], key="experience_val")
-    
-    uploaded_file = st.file_uploader("Upload Resume (PDF format)", type=["pdf"], key="uploaded_file_val")
-    
-    
-    
-    # Process Submission
-    if st.button("Apply & Start Screening"):
-        if not candidate_name or not candidate_email:
-            st.error("Please fill in your name and email address.")
-        elif not job_role.strip():
-            st.error("Please specify the Job Role name.")
-        elif not job_description.strip():
-            st.error("Please select or enter a job description.")
-        elif not uploaded_file:
-            st.error("Please upload your resume in PDF format.")
-        else:
-            # Check duplicate candidate
-            duplicate_record = check_duplicate_candidate(candidate_email)
-            if duplicate_record:
-                st.session_state.duplicate_candidate = duplicate_record
-                st.session_state.duplicate_blocked = True
-                st.rerun()
-            
-            # Consume retake allowance if they had one enabled
-            records = load_candidates()
-            for r in records:
-                if r.get("email", "").strip().lower() == candidate_email.strip().lower():
-                    if r.get("allowed_retake") is True:
-                        r["allowed_retake"] = False
-                        try:
-                            with open(CANDIDATES_FILE, "w") as f:
-                                json.dump(records, f, indent=2)
-                        except Exception:
-                            pass
-                        break
-                
-            with st.spinner("Extracting text from resume..."):
-                try:
-                    resume_text = ResumeParser.extract_text(uploaded_file)
-                    st.session_state.candidate_name = candidate_name
-                    st.session_state.candidate_email = candidate_email
-                    st.session_state.candidate_phone = candidate_phone
-                    st.session_state.job_role = job_role
-                    st.session_state.experience = experience
-                    st.session_state.job_description = job_description
-                    st.session_state.resume_text = resume_text
-                except Exception as e:
-                    st.error(f"Error parsing resume: {str(e)}")
-                    st.stop()
-                    
-            with st.spinner("Initial Screening Agent checking eligibility..."):
-                try:
-                    screening_agent = ScreeningAgent()
-                    res = screening_agent.run(
-                        resume_text=st.session_state.resume_text,
-                        job_role=st.session_state.job_role,
-                        experience=st.session_state.experience,
-                        job_description=st.session_state.job_description
-                    )
-                    st.session_state.screening_result = res
-                    
-                    if res.qualified:
-                        st.session_state.stage = "screening_passed"
-                    else:
-                        st.session_state.stage = "screening_failed"
-                    log_candidate_state()
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error invoking Screening Agent: {str(e)}")
-
-# ----------------- STAGE 2: SCREENING RESULTS SCREEN -----------------
-elif st.session_state.stage == "screening_passed":
-    st.markdown(f"""
-    <div class="glass-card" style="border-left: 5px solid #10b981;">
-        <div class="stage-title" style="border-left: none; padding-left: 0; color: #059669;">Screening Status: Qualified</div>
-        <div style="color: #059669; font-weight: 600; margin-bottom: 12px; font-size: 1.1rem;">🎉 Congratulations {st.session_state.candidate_name}! Your resume has cleared our initial screening.</div>
-        <div style="font-weight: 600; margin-bottom: 6px; color: #1e293b;">Recruiter Assessment:</div>
-        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; margin-bottom: 15px; font-size: 0.95rem; color: #1e293b; line-height: 1.5;">
-            {st.session_state.screening_result.reason}
-        </div>
-        <p style="color: #475569; margin-bottom: 0;">You are qualified to move to the <strong>Technical MCQ Screening Round</strong>. Click the button below to proceed.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    if st.button("Begin Technical MCQ Round"):
-        with st.spinner("Generating customized MCQ technical questions..."):
-            try:
-                job_diff = JOB_DIFFICULTIES.get(st.session_state.job_role, "Medium")
-                mcq_agent = MCQAgent()
-                mcq_list = mcq_agent.run(
-                    resume_text=st.session_state.resume_text,
-                    job_role=st.session_state.job_role,
-                    difficulty=job_diff,
-                    num_questions=5
-                )
-                st.session_state.mcqs = mcq_list.questions
-                st.session_state.stage = "mcq"
-                st.rerun()
-            except Exception as e:
-                st.error(f"Error generating MCQs: {str(e)}")
-
-elif st.session_state.stage == "screening_failed":
-    st.markdown(f"""
-    <div class="glass-card" style="border-left: 5px solid #ef4444;">
-        <div class="stage-title" style="border-left: none; padding-left: 0; color: #b91c1c;">Screening Status: Disqualified</div>
-        <div style="color: #b91c1c; font-weight: 600; margin-bottom: 12px; font-size: 1.1rem;">Thank you for applying, {st.session_state.candidate_name}. Unfortunately, your profile does not meet our minimum requirements for this position.</div>
-        <div style="font-weight: 600; margin-bottom: 6px; color: #1e293b;">Evaluation Feedback:</div>
-        <div style="background-color: #fdf2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 15px; font-size: 0.95rem; color: #1f2937; line-height: 1.5;">
-            {st.session_state.screening_result.reason}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    if st.button("Try Again / Adjust Application"):
-        restart_process()
-
-# ----------------- STAGE 3: TECHNICAL MCQ PHASE -----------------
-elif st.session_state.stage == "mcq":
-    render_mcq_stage()
-
-# ----------------- STAGE 4: MCQ RESULTS -----------------
-elif st.session_state.stage == "mcq_passed_screen":
-    st.markdown(f"""
-    <div class="glass-card" style="border-left: 5px solid #10b981;">
-        <div class="stage-title" style="border-left: none; padding-left: 0; color: #059669;">MCQ Screening Passed</div>
-        <div style="color: #059669; font-weight: 600; margin-bottom: 10px; font-size: 1.1rem;">🎉 Great job! You scored {st.session_state.mcq_score}/5 ({st.session_state.mcq_score * 20}%).</div>
-        <p style="color: #475569; margin-bottom: 0;">You have successfully passed the MCQ barrier and are eligible for the <strong>Interactive Technical Interview Round</strong>. Click below to start your interview.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    if st.button("Proceed to Technical Interview"):
-        # Set up initial welcome question from interview agent
-        st.session_state.stage = "interview"
-        # Initial greeting in chat history
-        st.session_state.chat_history = [
-            {"role": "assistant", "content": f"Hello {st.session_state.candidate_name}. Welcome to your technical interview for the {st.session_role if hasattr(st.session_state, 'session_role') else st.session_state.job_role} role. Let's start with a very basic question: What is Machine Learning, and what are the main types of Machine Learning?"}
-        ]
-        log_candidate_state()
-        st.rerun()
-
-elif st.session_state.stage == "mcq_failed_screen":
-    st.markdown(f"""
-    <div class="glass-card" style="border-left: 5px solid #ef4444;">
-        <div class="stage-title" style="border-left: none; padding-left: 0; color: #b91c1c;">MCQ Screening Failed</div>
-        <div style="color: #b91c1c; font-weight: 600; margin-bottom: 10px; font-size: 1.1rem;">You scored {st.session_state.mcq_score}/5. The passing score is at least 3/5.</div>
-        <p style="color: #475569; margin-bottom: 0;">Unfortunately, we cannot proceed with your application at this time.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    if st.button("Back to Start"):
-        restart_process()
-
-elif st.session_state.stage == "interview":
-    render_interview_stage()
-
-# ----------------- STAGE 6: FINAL EVALUATION SCREEN & EMAIL -----------------
-elif st.session_state.stage == "final_evaluation":
-    st.markdown("""
-    <div class="glass-card" style="margin-bottom: 20px;">
-        <div class="stage-title">Final Interview Assessment</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    eval_res = st.session_state.evaluation_result
-    
-    if eval_res.selected:
-        st.balloons()
-        st.markdown('<h3 style="color: #10b981;">Selection Status: SELECTED</h3>', unsafe_allow_html=True)
-        st.success(f"Congratulations {st.session_state.candidate_name}! You have passed the final technical interview round.")
-        
-        # Display Candidate summary
-        st.write("**Evaluation Summary for Candidate:**")
-        st.info(eval_res.summary_for_candidate)
-        
-        st.write("**Recruiter Internal Assessment:**")
-        st.markdown(f"```\n{eval_res.overall_feedback}\n```")
-        
-        
-        # Trigger Outbound Voice Call automatically in the background
-        if not st.session_state.call_sent and st.session_state.candidate_phone:
-            with st.spinner("Initiating automated voice dispatch..."):
-                try:
-                    from src.agents.shared_agents.elevenlabs_agent import ElevenLabsAgent
-                    voice_agent = ElevenLabsAgent()
-                    call_res = voice_agent.trigger_outbound_call(
-                        to_number=st.session_state.candidate_phone.strip(),
-                        candidate_name=st.session_state.candidate_name,
-                        company_name="Hackthon"
-                    )
-                    st.session_state.call_sent = True
-                    if call_res["success"] and call_res["data"].get("success", False):
-                        st.success(f"Successfully initiated selection voice call via ElevenLabs.")
-                    else:
-                        # Silently handle failure by showing a queued message for clean demo presentation
-                        st.info("ElevenLabs Voice Dispatch status: Automated voice call notification queued for candidate.")
-                except Exception as e:
-                    # Silently handle exception by showing a queued message for clean demo presentation
-                    st.info("ElevenLabs Voice Dispatch status: Automated voice call notification queued for candidate.")
-                    st.session_state.call_sent = True
-
-        # Trigger Email
-        if not st.session_state.email_sent:
-            with st.spinner("Sending notification email to candidate..."):
-                email_agent = EmailAgent()
-                success = email_agent.run(
-                    recipient_email=st.session_state.candidate_email,
-                    job_role=st.session_state.job_role,
-                    feedback_summary=eval_res.summary_for_candidate
-                )
-                st.session_state.email_sent = True
-                if success:
-                    st.success(f"Confirmation email successfully sent to {st.session_state.candidate_email} via SMTP!")
-                else:
-                    st.warning("Could not dispatch confirmation email. Please check your SMTP configuration in the .env file.")
-    else:
-        st.markdown('<h3 style="color: #ef4444;">Selection Status: NOT SELECTED</h3>', unsafe_allow_html=True)
-        st.error(f"Thank you for your time, {st.session_state.candidate_name}. You were not selected for the next round.")
-        st.write("**Evaluation Feedback Summary:**")
-        st.warning(eval_res.summary_for_candidate)
-        
-        st.write("**Recruiter Internal Assessment:**")
-        st.markdown(f"```\n{eval_res.overall_feedback}\n```")
-        
-
-    if st.button("Start New Assessment"):
-        restart_process()
-
-# Collapsible help request expander for active test stages
-if st.session_state.stage != "upload":
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    with st.expander("🚨 Facing technical issues during the test? Report to Recruiter"):
-        st.write("If you face any issues (e.g., page froze, microphone failed, transcription error), detail it below. The AI Support Agent will diagnose it and alert the recruiter.")
-        with st.form("stage_support_form"):
-            issue_desc = st.text_area("What issue are you facing?", placeholder="Detail the technical problem here...", height=100)
-            submit_stage_ticket = st.form_submit_button("Submit Help Ticket")
-            
-            if submit_stage_ticket:
-                if not issue_desc.strip():
-                    st.error("Please describe your issue.")
-                else:
-                    with st.spinner("AI Support Agent is processing your request..."):
-                        try:
-                            support_agent = SupportAgent()
-                            cand_hist = {
-                                "name": st.session_state.candidate_name,
-                                "email": st.session_state.candidate_email,
-                                "job_role": st.session_state.job_role,
-                                "status": st.session_state.stage,
-                                "timestamp": "Active Session"
-                            }
-                            diagnosis_res = support_agent.run(
-                                candidate_email=st.session_state.candidate_email,
-                                reported_message=issue_desc.strip(),
-                                candidate_history=cand_hist
-                            )
-                            
-                            # Log issue ticket
-                            import datetime
-                            is_auto_resolved = getattr(diagnosis_res, "auto_resolve_eligible", False)
-                            cand_notif = getattr(diagnosis_res, "candidate_notification", "Your request is under review.")
-                            
-                            new_ticket = {
-                                "email": st.session_state.candidate_email,
-                                "name": st.session_state.candidate_name,
-                                "job_role": st.session_state.job_role,
-                                "message": issue_desc.strip(),
-                                "diagnosis": diagnosis_res.diagnosis,
-                                "severity": diagnosis_res.severity,
-                                "suggested_action": diagnosis_res.suggested_action,
-                                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                "resolved": is_auto_resolved,
-                                "resolved_by": "AI Auto-Resolver" if is_auto_resolved else "Pending Review",
-                                "justification": getattr(diagnosis_res, "justification", ""),
-                                "confidence_score": getattr(diagnosis_res, "confidence_score", 0.0),
-                                "resolution_log": f"Auto-approved reset. Justification: {getattr(diagnosis_res, 'justification', '')}" if is_auto_resolved else "",
-                                "candidate_notification": cand_notif
-                            }
-                            
-                            if is_auto_resolved:
-                                # Update candidate database entry
-                                records = load_candidates()
-                                for r in records:
-                                    if r.get("email", "").strip().lower() == st.session_state.candidate_email.strip().lower():
-                                        r["allowed_retake"] = True
-                                        r["status"] = "Retake Allowed"
-                                        break
-                                try:
-                                    with open(CANDIDATES_FILE, "w") as f:
-                                        json.dump(records, f, indent=2)
-                                except Exception:
-                                    pass
-                            
-                            tickets = load_issues()
-                            updated = False
-                            for idx, t in enumerate(tickets):
-                                if t.get("email", "").strip().lower() == st.session_state.candidate_email.strip().lower() and not t.get("resolved", False):
-                                    tickets[idx] = new_ticket
-                                    updated = True
-                                    break
-                            if not updated:
-                                tickets.append(new_ticket)
-                                
-                            save_issues(tickets)
-                            
-                            if is_auto_resolved:
-                                st.session_state.support_resolved_message = cand_notif
-                            else:
-                                st.session_state.support_pending_message = cand_notif
-                            st.session_state.stage = "upload"
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Support Agent error: {str(e)}")
+# ----------------- CANDIDATE PORTAL NAVIGATION ROUTER -----------------
+if not st.session_state.get("candidate_logged_in", False):
+    render_candidate_auth_portal()
+else:
+    render_candidate_hub_portal()

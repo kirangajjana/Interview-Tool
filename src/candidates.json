@@ -1,36 +1,232 @@
 [
   {
-    "name": "kiran",
-    "email": "kiran.gajjana@gmai.com",
-    "phone": "+919642971873",
+    "name": "Admin Tester",
+    "email": "admin@test.com",
+    "phone": "+1234567890",
+    "password": "admin",
     "job_role": "ai/ml engineer",
     "experience": "Entry Level (0-2 years)",
-    "status": "Interview Finished",
-    "screening_reason": "Kiran, your resume showcases an impressive background as an AI/ML Engineer with strong expertise in deep learning, computer vision, and NLP. Your hands-on experience with Python, FastAPI, Azure AI, and generative AI frameworks like LangChain and LangGraph directly aligns with the core requirements of this role. Your projects, including building AI-powered copilots and custom vision models, demonstrate practical application of these skills. We are very excited about your potential and believe you have an excellent foundation to excel in this position. You are highly qualified to proceed to the next MCQ round!",
+    "job_description": "AI/ML Engineer\n\nThis role involves designing, developing, and deploying cutting-edge AI/ML solutions and intelligent applications. You will be instrumental in building scalable systems that leverage the latest advancements in machine learning and large language models.\n\nKey Responsibilities:\n*   Develop, test, and deploy AI/ML models and pipelines using Python.\n*   Design and implement LLM-powered applications using LangChain and LangGraph.\n*   Build high-performance APIs with FastAPI to integrate ML services.\n*   Manage and deploy AI/ML solutions on cloud platforms.\n*   Collaborate with cross-functional teams to define and deliver product features.\n\nRequired Skills:\n*   Proficiency in Python programming.\n*   Hands-on experience with LangChain and LangGraph.\n*   Strong knowledge of FastAPI for API development.\n*   Experience with cloud platforms (AWS, Azure, GCP).\n*   Solid understanding of machine learning principles.",
+    "stage": "proctoring_instruction",
+    "status": "Reviewing Assessment Rules",
+    "screening_reason": "Pre-screened admin tester account for convenient end-to-end evaluation.",
     "match_score": 95,
     "matched_skills": [
       "Python",
       "FastAPI",
-      "Deep Learning",
+      "LangChain",
+      "LangGraph",
       "Generative AI",
+      "Deep Learning",
+      "Machine Learning"
+    ],
+    "missing_skills": [
+      "AWS",
+      "GCP"
+    ],
+    "red_flags": [],
+    "mcq_score": "N/A",
+    "selection": "N/A",
+    "eval_selected": true,
+    "overall_feedback": "Admin Tester's resume highlights a strong foundation and expertise in key technologies highly relevant to the AI/ML Engineer role, including Python, FastAPI, LangChain, LangGraph, Generative AI, Deep Learning, and Machine Learning. These skills directly align with our requirements for developing, testing, and deploying AI/ML models and LLM-powered applications. While the interview responses were brief and did not allow for a deep dive into their technical understanding, their stated proficiency and experience, particularly with LangChain, LangGraph, and FastAPI, indicate significant potential. We believe Admin Tester possesses the foundational knowledge and the eagerness to apply their skills in a dynamic environment. Their background suggests a strong capacity for learning and contributing to cutting-edge AI/ML solutions. We recommend moving forward to assess their capabilities further in subsequent stages.",
+    "summary": "",
+    "chat_history": [],
+    "resume_text": "Admin Tester Resume: Expert in Python, FastAPI, LangChain, LangGraph, Generative AI, Deep Learning, and Machine Learning.",
+    "mcqs": [],
+    "mcq_answers": {},
+    "timestamp": "2026-06-15 17:36:22",
+    "tab_switches": 0,
+    "proctoring_warnings": [],
+    "proctoring_violated": false,
+    "proctoring_report": null,
+    "allowed_retake": false
+  },
+  {
+    "name": "kiran gajjana",
+    "email": "m210008@nitsikkim.ac.in",
+    "phone": "+919642971873",
+    "job_role": "ai/ml engineer",
+    "experience": "Entry Level (0-2 years)",
+    "status": "Retake Allowed",
+    "screening_reason": "Kiran, your resume is an outstanding match for the AI/ML Engineer role! You demonstrate strong proficiency in Python, FastAPI, and cloud platforms like Azure AI/ML, which are core requirements. Your hands-on experience with LangChain, LangGraph, Generative AI, Deep Learning, NLP, and Computer Vision, coupled with practical project experience in building and deploying LLM-powered applications, makes you an exceptionally strong candidate. We are very impressed with your background and are excited to invite you to the next MCQ round!",
+    "match_score": 95,
+    "matched_skills": [
+      "Python",
+      "FastAPI",
+      "LangChain",
+      "LangGraph",
+      "Generative AI",
+      "Deep Learning",
+      "Machine Learning",
+      "NLP",
+      "Computer Vision",
+      "Azure AI",
+      "Azure ML",
+      "MLOps",
+      "OpenAI",
+      "GPT models",
+      "Transformer architectures",
+      "CNN",
+      "RNN",
+      "Supervised Learning",
+      "RAG",
+      "Agentic AI",
+      "ChromaDB",
+      "Flask",
+      "Streamlit",
+      "OpenCV",
+      "YOLO"
+    ],
+    "missing_skills": [
+      "AWS",
+      "GCP"
+    ],
+    "red_flags": [
+      "Short tenure in current role (Associate Software Engineer, Jan 2024 - present)"
+    ],
+    "mcq_score": "0/5",
+    "selection": "N/A",
+    "summary": "",
+    "chat_history": [],
+    "timestamp": "2026-06-15 16:10:01",
+    "tab_switches": 4,
+    "proctoring_warnings": [
+      "16:09:36",
+      "16:09:50",
+      "16:09:56",
+      "16:09:58"
+    ],
+    "proctoring_violated": true,
+    "proctoring_report": {
+      "trust_score": 0,
+      "risk_level": "Suspicious - Auto-Submitted",
+      "violation_summary": "Candidate switched tabs four times during the assessment at 16:09:36, 16:09:50, 16:09:56, and 16:09:58. This exceeded the allowed limit, leading to the automatic submission of the assessment.",
+      "cheating_likelihood": "Highly Likely",
+      "proctoring_verdict": "Disqualified"
+    },
+    "allowed_retake": true
+  },
+  {
+    "name": "kiran",
+    "email": "kiran.gajjana@gmail.com",
+    "phone": "9642971873",
+    "password": "admin123",
+    "job_role": "ai/ml engineer",
+    "experience": "Entry Level (0-2 years)",
+    "job_description": "AI/ML Engineer\n\nThis role involves designing, developing, and deploying cutting-edge AI/ML solutions and intelligent applications. You will be instrumental in building scalable systems that leverage the latest advancements in machine learning and large language models.\n\nKey Responsibilities:\n*   Develop, test, and deploy AI/ML models and pipelines using Python.\n*   Design and implement LLM-powered applications using LangChain and LangGraph.\n*   Build high-performance APIs with FastAPI to integrate ML services.\n*   Manage and deploy AI/ML solutions on cloud platforms.\n*   Collaborate with cross-functional teams to define and deliver product features.\n\nRequired Skills:\n*   Proficiency in Python programming.\n*   Hands-on experience with LangChain and LangGraph.\n*   Strong knowledge of FastAPI for API development.\n*   Experience with cloud platforms (AWS, Azure, GCP).\n*   Solid understanding of machine learning principles.",
+    "stage": "final_evaluation",
+    "status": "Auto-Submitted (Proctoring Violation)",
+    "screening_reason": "We are absolutely thrilled to see your application! Your resume showcases an impressive background as an AI/ML Engineer with direct experience in many of the core technologies we're looking for. Your proficiency in Python, FastAPI, LangChain, and LangGraph, coupled with your hands-on experience in deploying AI/ML solutions on Azure AI, makes you a fantastic fit for this role. We're particularly excited about your work with generative AI, NLP, computer vision, and your strong research background in deep learning and adversarial attacks. Your project experience, including building AI-powered copilots and custom vision models, demonstrates practical application of these skills. We believe your expertise will be a valuable asset, and we're eager to see you advance to the next stage!",
+    "match_score": 90,
+    "matched_skills": [
+      "Python programming",
+      "FastAPI",
       "LangChain",
       "LangGraph",
       "Azure AI",
-      "Azure ML",
-      "Computer Vision",
-      "Natural Language Processing (NLP)",
-      "Supervised Learning",
       "Machine Learning principles",
-      "MLOps"
+      "Deep Learning (ANN, CNN, RNN)",
+      "Generative AI",
+      "Natural Language Processing (NLP)",
+      "Computer Vision (OpenCV, YOLO)",
+      "MLOps",
+      "Transformer-based architectures",
+      "TensorFlow"
     ],
-    "missing_skills": [],
+    "missing_skills": [
+      "AWS",
+      "GCP"
+    ],
     "red_flags": [
-      "Short tenure in current professional role (January 2024 - present)"
+      "Short tenure in current role (January 2024 - present)"
     ],
     "mcq_score": "5/5",
-    "selection": "Selected",
-    "summary": "Congratulations, Kiran! We were very impressed with your technical expertise and the depth of your experience in AI/ML. Your resume showcases a fantastic range of skills, from developing advanced deep learning models and generative AI applications using frameworks like LangChain and LangGraph, to deploying scalable solutions on Azure AI. We especially noted your impactful projects, such as the Support Copilot Automation and the ADO Bugs Automation Copilot, which demonstrate your ability to build practical, high-value AI solutions. During our discussion, you clearly articulated your understanding of core machine learning concepts and provided excellent examples of supervised learning. We are excited about your potential contributions and would like to invite you to the next stage of our hiring process. Great job, and we look forward to speaking with you again soon!",
-    "timestamp": "2026-06-14 01:55:59",
+    "selection": "N/A",
+    "eval_selected": false,
+    "overall_feedback": "",
+    "summary": "",
+    "chat_history": [
+      {
+        "role": "assistant",
+        "content": "Hello kiran. Welcome to your technical interview for the ai/ml engineer role. Let's start with a very basic question: What is Machine Learning, and what are the main types of Machine Learning?"
+      }
+    ],
+    "resume_text": "KIRAN GAJJANA EMAIL: KIRAN.GAJJANA@GMAIL.COM\nPortfolio: Kirangajjana.com MOBILE: +91-9642971873\nGithub: github.com/kirangajjana\nLinkedIn: linkedin.com/in/kiran-gajjana/\nSummary\nAI/ML Engineer with a strong research background in adversarial attacks and deep learning, coupled with hands-on\nindustry experience in building scalable AI-driven solutions at Tech Mahindra. Proficient in Azure AI, Python,\nFastAPI, and Deep Learning frameworks, with expertise in computer vision, NLP, and generative AI. Passionate about\noptimizing AI workflows, automating business processes, and enhancing model robustness.\nEducation\n\u2022 NA TIONAL INSTITUTE OF TECHNOLOGY SIKKIM-MTECH SIKKIM, INDIA\nMASTER OF TECHNOLOGY - ARTIFICIAL INTELLIGENCE; CGPA: 7.8 2021 -2023\n\u2022 CENTURION UNIVERSITY OF TECHNOLOGY AND MANAGEMENT-BTECH ORISSA, INDIA\nBACHELOR OF TECHNOLOGY - COMPUTER SCIENCE AND ENGINEERING; CGPA: 7.8 2016 -2020\n\u2022 SRI CHAIT ANY A JUNIOR KALASALA-INTERMEDIA TE VIJAYAWADA, INDIA\nMPC; PERCENTAGE: 75 2014 -2016\n\u2022 SRI CHAIT ANY A TECHNO SCHOOL-METRICULA TION PALASA, INDIA\nFINAL SCHOOLING; CGPA:9.0 2013 -2014\nInternships\n\u2022 T ech Mahindra Hyderabad, Telangana\nAI Consultant Intern - Machine Learning, Deep Learning,Microsoft Azure August 2023 \u2013 November 2023\nBuilt OpenAI-powered AI automation tools that improved business decision-making, automate workflows and reduce\nerror rates by 20%, developed custom deep learning models using Azure AI, implementing transformer-based\narchitectures, increasing project success rates by 30% .\n\u2022 National Institute of T echnology , Sikkim Ravangla, Sikkim\nResearch Scholar - Machine Learning and Deep Learning August 2022 \u2013 July 2023\nLed research on adversarial attacks in deep learning, developing novel defense algorithms that improved model\nrobustness by 25%, developed adversarial attack detection algorithms, and coauthored a peer-reviewed publication on\nAI security.\n.\n\u2022 AICTE Andhra Pradesh\nResearch Scholar - Machine Learning and Deep Learning July 2021 \u2013 Feb 2022\nDesigned cloud-based ML solutions that automated data processing, reducing computational overhead by 40%.\nDeveloped predictive models for resource allocation, improving efficiency in AICTE\u2019s cloud infrastructure.\nProfessional Experience\n\u2022 T ech Mahindra Hyderabad, Telangana\nAssociate Software Engineer - Machine Learning, Deep Learning,Microsoft Azure January 2024 \u2013 present\nDesigned and deployed scalable AI/ML solutions for Microsoft using Azure AI, optimizing model architectures with\nhyperparameter tuning and efficient training pipelines, increasing precision by 15% and reducing processing time by\n60%\nTechnical Skills\n\u25e6 Programming & Development: Python, Fast API, Flask, Streamlit\n\u25e6 Artificial Intelligence & Machine Learning :\n\u25e6 Supervised Learning (Regression, Classification)\n\u25e6 Deep Learning (ANN, CNN, RNN)\n\u25e6 Generative AI (Lang Chain, Lang Serve, Lang Smith, RAG)\n\u25e6 Agentic AI & Frameworks:\n\u25e6 Agentic AI\n\u25e6 Lang Graph, Phi data, Crew AI\n\u25e6 Natural Language Processing (NLP) :\n\u25e6 Computer Vision:\n\u25e6 OpenCV, YOLO\n\u25e6 Image Classification\n\u25e6 Cloud & DevOps:\n\u25e6 Azure AI, Azure ML\n\u25e6 MLOps\n\u25e6 Vector Databases: ChromaDB\nProfessional Projects\n\u2022 Support Copilot Automation : Developed an AI-powered support copilot using OpenAI\u2019s GPT models and FastAPI,\nautomating ticket categorization with NLP-based classification and reducing resolution time from hours to under 5 minutes.\n(Sept 2024 \u2013 Present)\n\u2022 ADO Bugs Automation Copilot : Engineered an OpenAI-powered chatbot for Azure DevOps (ADO), integrating issue\nclassification and real-time recommendations, cutting bug resolution time by 80% and increasing developer efficiency by\n30%.(July \u2013 Sept 2024)\n\u2022 Language Translation Rag based Model using Gpt4o : Developed a multilingual translation pipeline using GPT-4o,\nenhancing tokenization strategies with contextual embeddings, achieving 95% accuracy across 10+ languages and reducing\ntranslation errors by 25%. (Jan-March\u20192024)\n\u2022 Custom Vision Model : Engineered a product search model using ResNet-based CNN architecture in TensorFlow and Azure\nAI, boosting image recognition accuracy by 30% and automating classification to cut manual effort by 50%.\n(March-May\u20192024)\n\u2022 Azure DevOps Chatbot : Built an Azure DevOps chatbot pipeline based on Azure DevOps for Microsoft.\n(May-August\u20192024)\n\u2022 Microsoft Copilot: Developed an AI-powered Microsoft Copilot leveraging Azure AI\u2019s NLP models, automating ticket triage\nand reducing response time by 70%. (May\u20192024)\nAcademic Projects\n\u2022 Breaking the Defenses: Adversarial Attacks on Deep Learning Models : Designed and implemented adversarial\ndefense techniques and adversarial training and input preprocessing, strengthening deep learning model security by 25%\n(MTech Research Project (Jan-May \u20192023))\n\u2022 Air Quality Index Estimation Using Hybrid Model : Employed a hybrid model integrating machine learning and\nstatistical techniques to estimate air quality indices. (MTech Research Project (Jan-Feb \u20192023))\n\u2022 Personalized Recommendation System: Collaborative Filtering Techniques : Crafted a recommendation system\nutilizing collaborative filtering for tailored suggestions of products, movies, or music based on user preferences. (MERN\nStack Development - March \u20192023)\u2019\n\u2022 Credit Risk Assessment: Predictive Modeling for Loan Applications : Engineered a predictive model employing\nlogistic regression, random forests, or gradient boosting for assessing credit risk in loan applications. Achieved a 90% accuracy\nrate on a validation dataset, facilitating informed lending decisions. (MERN Stack Development - March \u20192023)\u2019\n\u2022 Recurrent Neural Network (RNN) Project: Sentiment Analysis for Movie Reviews : Utilized RNNs for sentiment\nanalysis on movie reviews, capturing contextual information for classification. (MERN Stack Development - Feb \u20192023)\u2019\n\u2022 Agriconnect: IoT Project Sponsored by GOVT OF INDIA : Built a smart farming system integrating IoT sensor data\nwith AI-powered disease detection models, improving crop yield predictions and aiding farmers in real-time decision-making.\n(Nov \u20192022)\u2019\nCertifications\n\u2022 Azure AI 900 Certified\n\u2022 Azure AZ 900 Certified\n\u2022 Oracle Generative AI Certified",
+    "mcqs": [
+      {
+        "question": "What does the acronym \"AI\" primarily stand for in the field of technology?",
+        "options": [
+          "Artificial Intelligence",
+          "Automated Information",
+          "Advanced Integration",
+          "Algorithmic Innovation"
+        ],
+        "correct_option": "Artificial Intelligence"
+      },
+      {
+        "question": "Which of the following best describes the main goal of Machine Learning?",
+        "options": [
+          "To design physical robots",
+          "To enable computers to learn from data without explicit programming",
+          "To create graphical user interfaces",
+          "To manage large databases"
+        ],
+        "correct_option": "To enable computers to learn from data without explicit programming"
+      },
+      {
+        "question": "Deep Learning is a specialized area within Machine Learning that is most closely associated with which type of model?",
+        "options": [
+          "Linear Regression",
+          "Decision Trees",
+          "Neural Networks",
+          "Support Vector Machines"
+        ],
+        "correct_option": "Neural Networks"
+      },
+      {
+        "question": "What is Python commonly used for in the context of AI and Machine Learning?",
+        "options": [
+          "Building operating systems",
+          "Creating video games",
+          "Writing scripts for data processing and model development",
+          "Designing hardware components"
+        ],
+        "correct_option": "Writing scripts for data processing and model development"
+      },
+      {
+        "question": "Which of these is a fundamental task in Computer Vision?",
+        "options": [
+          "Predicting stock prices",
+          "Recognizing objects in images or videos",
+          "Translating text between languages",
+          "Generating new musical compositions"
+        ],
+        "correct_option": "Recognizing objects in images or videos"
+      }
+    ],
+    "mcq_answers": {
+      "0": "Artificial Intelligence",
+      "1": "To enable computers to learn from data without explicit programming",
+      "2": "Neural Networks",
+      "3": "Writing scripts for data processing and model development",
+      "4": "Recognizing objects in images or videos"
+    },
+    "timestamp": "2026-06-15 17:08:55",
+    "tab_switches": 4,
+    "proctoring_warnings": [
+      "16:48:04",
+      "16:56:33",
+      "17:01:30",
+      "17:08:40"
+    ],
+    "proctoring_violated": true,
+    "proctoring_report": {
+      "trust_score": 0,
+      "risk_level": "Suspicious - Auto-Submitted",
+      "violation_summary": "Candidate switched tabs four times during the assessment at 16:48:04, 16:56:33, 17:01:30, and 17:08:40. This indicates a repeated loss of focus from the assessment window, potentially for external assistance or information lookup.",
+      "cheating_likelihood": "Highly Likely",
+      "proctoring_verdict": "Disqualified"
+    },
     "allowed_retake": false
   }
 ]

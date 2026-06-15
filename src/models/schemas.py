@@ -46,3 +46,10 @@ class JobAction(BaseModel):
     job_description: str = Field("", description="The detailed, professional markdown job description. For 'add', this must be generated based on the recruiter's brief description or notes. For 'update', it must be the updated complete job description containing the requested changes.")
     difficulty: str = Field("Medium", description="The target difficulty level for candidate evaluation: 'Very Easy', 'Easy', 'Medium', or 'Hard'.")
     explanation: str = Field(description="A polite, direct message explaining what the agent did (or why it couldn't do it) and summarizing the final state of the job role.")
+
+class ProctoringReport(BaseModel):
+    trust_score: int = Field(description="Trust score between 0 and 100 based on candidate tab-switching violations. Starts at 100, drops for each violation.")
+    risk_level: str = Field(description="Risk assessment level: 'Low' (0 switches), 'Medium' (1-2 switches), 'High' (3 switches), or 'Suspicious - Auto-Submitted' (4+ switches).")
+    violation_summary: str = Field(description="A concise written summary explaining the timeline and potential risk of cheating.")
+    cheating_likelihood: str = Field(description="Likelihood of cheating. Must be one of: 'Unlikely', 'Possible', 'Highly Likely'.")
+    proctoring_verdict: str = Field(description="Final verdict, e.g. 'Passed Proctoring', 'Under Review', 'Disqualified'.")
