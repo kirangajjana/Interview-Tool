@@ -1,5 +1,5 @@
-from src.agents.base_agent import BaseAgent
-from src.agents.interview_agent.prompts import INTERVIEW_SYSTEM_PROMPT, EVALUATION_SYSTEM_PROMPT
+from src.agents.shared_agents.base_agent import BaseAgent
+from src.agents.candidate_agents.interview_agent.prompts import INTERVIEW_SYSTEM_PROMPT, EVALUATION_SYSTEM_PROMPT
 from src.models.schemas import InterviewResponse, FinalEvaluation
 from langchain_core.prompts import ChatPromptTemplate
 

@@ -1,5 +1,5 @@
-from src.agents.base_agent import BaseAgent
-from src.agents.repeat_agent.prompts import CLARIFICATION_SYSTEM_PROMPT
+from src.agents.shared_agents.base_agent import BaseAgent
+from src.agents.candidate_agents.repeat_agent.prompts import CLARIFICATION_SYSTEM_PROMPT
 from src.models.schemas import ClarificationResult
 
 class RepeatAgent(BaseAgent):

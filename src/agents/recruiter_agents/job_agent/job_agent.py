@@ -1,4 +1,4 @@
-from src.agents.base_agent import BaseAgent
+from src.agents.shared_agents.base_agent import BaseAgent
 from src.models.schemas import JobAction
 import json
 

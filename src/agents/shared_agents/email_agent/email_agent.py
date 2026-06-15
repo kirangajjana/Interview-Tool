@@ -2,7 +2,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from src.config import Config
-from src.agents.email_agent.templates import SELECTION_EMAIL_SUBJECT, SELECTION_EMAIL_BODY
+from src.agents.shared_agents.email_agent.templates import SELECTION_EMAIL_SUBJECT, SELECTION_EMAIL_BODY
 
 class EmailAgent:
     def __init__(self):

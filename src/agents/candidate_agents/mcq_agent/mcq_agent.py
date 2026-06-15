@@ -1,5 +1,5 @@
-from src.agents.base_agent import BaseAgent
-from src.agents.mcq_agent.prompts import MCQ_GENERATION_SYSTEM_PROMPT
+from src.agents.shared_agents.base_agent import BaseAgent
+from src.agents.candidate_agents.mcq_agent.prompts import MCQ_GENERATION_SYSTEM_PROMPT
 from src.models.schemas import MCQList
 
 class MCQAgent(BaseAgent):

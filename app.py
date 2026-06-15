@@ -11,13 +11,13 @@ for mod in list(sys.modules.keys()):
 
 from src.config import Config
 from src.parser import ResumeParser
-from src.agents.screening_agent import ScreeningAgent
-from src.agents.mcq_agent import MCQAgent
-from src.agents.interview_agent import InterviewAgent
-from src.agents.email_agent import EmailAgent
-from src.agents.support_agent import SupportAgent
-from src.agents.repeat_agent import RepeatAgent
-from src.agents.job_agent import JobAgent
+from src.agents.candidate_agents.screening_agent import ScreeningAgent
+from src.agents.candidate_agents.mcq_agent import MCQAgent
+from src.agents.candidate_agents.interview_agent import InterviewAgent
+from src.agents.shared_agents.email_agent import EmailAgent
+from src.agents.recruiter_agents.support_agent import SupportAgent
+from src.agents.candidate_agents.repeat_agent import RepeatAgent
+from src.agents.recruiter_agents.job_agent import JobAgent
 
 # Set page configurations
 st.set_page_config(
@@ -760,7 +760,7 @@ st.components.v1.html("""
         doc.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 const active = doc.activeElement;
-                if (active && active.tagName === 'INPUT' && active.type !== 'submit' && active.type !== 'button') {
+                if (active && active.tagName === 'INPUT' && active.type !== 'submit' && active.type !== 'button' && active.type !== 'password') {
                     e.preventDefault();
                     e.stopPropagation();
                     const selector = 'input[type="text"]:not([readonly]), input[type="email"]:not([readonly]), input[type="tel"]:not([readonly]), select, textarea:not([readonly])';
@@ -774,6 +774,38 @@ st.components.v1.html("""
                 }
             }
         }, true);
+    }
+
+    if (!window.parent.__job_audio_listener_added__) {
+        window.parent.__job_audio_listener_added__ = true;
+        doc.addEventListener('mouseover', function(e) {
+            const marker = doc.getElementById('recruiter-chat-column-marker');
+            if (marker) {
+                const colContainer = marker.closest('[data-testid="stVerticalBlock"]');
+                if (colContainer && colContainer.contains(e.target)) {
+                    const msg = marker.getAttribute('data-msg');
+                    if (msg && window.parent.__last_spoken_hover_msg__ !== msg) {
+                        window.parent.__last_spoken_hover_msg__ = msg;
+                        window.parent.speechSynthesis.cancel();
+                        const utterance = new SpeechSynthesisUtterance(msg);
+                        utterance.rate = 1.05;
+                        const voices = window.parent.speechSynthesis.getVoices();
+                        const engVoice = voices.find(v => v.lang.startsWith('en'));
+                        if (engVoice) utterance.voice = engVoice;
+                        window.parent.speechSynthesis.speak(utterance);
+                    }
+                }
+            }
+        });
+        doc.addEventListener('mouseout', function(e) {
+            const marker = doc.getElementById('recruiter-chat-column-marker');
+            if (marker) {
+                const colContainer = marker.closest('[data-testid="stVerticalBlock"]');
+                if (colContainer && !colContainer.contains(e.relatedTarget)) {
+                    window.parent.__last_spoken_hover_msg__ = "";
+                }
+            }
+        });
     }
 </script>
 """, height=0)
@@ -1196,47 +1228,49 @@ def render_mcq_stage():
 def render_interview_stage():
     user_response_text = ""
     if not st.session_state.interview_concluded:
-        input_method = st.radio("Input Method", ["⌨️ Type response", "🎙️ Record Voice response"], horizontal=True, key="interview_input_method")
-        
-        if input_method == "⌨️ Type response":
-            with st.form("chat_form", clear_on_submit=True):
-                user_input = st.text_area("Your Response", placeholder="Type your answer here and click Send...")
-                submitted = st.form_submit_button("Send Answer")
-            if submitted and user_input.strip():
-                user_response_text = user_input.strip()
-        else:
-            st.markdown('<div><span class="recording-indicator"></span><strong>Microphone Ready</strong> - speak clearly and submit.</div>', unsafe_allow_html=True)
-            st.info("🎙️ **Voice Instructions**: Click the microphone icon below to start recording. Speak your answer clearly, and click the stop icon when you are finished. Then click **Submit Answer**.")
-            audio_file = st.audio_input("Record your answer", key="interview_audio_record")
-            if audio_file:
-                st.audio(audio_file)
-                if st.button("Submit Answer"):
-                    with st.spinner("Transcribing your audio..."):
-                        try:
-                            config = Config.load_config()
-                            from google import genai
-                            from google.genai import types
-                            
-                            client = genai.Client(api_key=config.GEMINI_API_KEY)
-                            audio_bytes = audio_file.read()
-                            
-                            response = client.models.generate_content(
-                                model='gemini-2.5-flash',
-                                contents=[
-                                    types.Part.from_bytes(
-                                        data=audio_bytes,
-                                        mime_type=audio_file.type
-                                    ),
-                                    "Transcribe the spoken technical words in this audio into text accurately. Do not add any conversational framing or headers, just return the text transcription."
-                                ]
-                            )
-                            transcription = response.text.strip() if response.text else ""
-                            if transcription:
-                                user_response_text = transcription
-                            else:
-                                st.error("No speech detected. Please record again.")
-                        except Exception as e:
-                            st.error(f"Voice transcription failed: {str(e)}")
+        with st.container(border=True):
+            tab_type, tab_voice = st.tabs(["⌨️ Type response", "🎙️ Record Voice response"])
+            
+            with tab_type:
+                with st.form("chat_form", clear_on_submit=True):
+                    user_input = st.text_area("Your Response", placeholder="Type your answer here and click Send...", key="interview_text_input")
+                    submitted = st.form_submit_button("Send Answer")
+                if submitted and user_input.strip():
+                    user_response_text = user_input.strip()
+            
+            with tab_voice:
+                st.markdown('<div><span class="recording-indicator"></span><strong>Microphone Ready</strong> - speak clearly and submit.</div>', unsafe_allow_html=True)
+                st.info("🎙️ **Voice Instructions**: Click the microphone icon below to start recording. Speak your answer clearly, and click the stop icon when you are finished. Then click **Submit Answer**.")
+                audio_file = st.audio_input("Record your answer", key="interview_audio_record")
+                if audio_file:
+                    st.audio(audio_file)
+                    if st.button("Submit Answer", key="interview_voice_submit_btn"):
+                        with st.spinner("Transcribing your audio..."):
+                            try:
+                                config = Config.load_config()
+                                from google import genai
+                                from google.genai import types
+                                
+                                client = genai.Client(api_key=config.GEMINI_API_KEY)
+                                audio_bytes = audio_file.read()
+                                
+                                response = client.models.generate_content(
+                                    model='gemini-2.5-flash',
+                                    contents=[
+                                        types.Part.from_bytes(
+                                            data=audio_bytes,
+                                            mime_type=audio_file.type
+                                        ),
+                                        "Transcribe the spoken technical words in this audio into text accurately. Do not add any conversational framing or headers, just return the text transcription."
+                                    ]
+                                )
+                                transcription = response.text.strip() if response.text else ""
+                                if transcription:
+                                    user_response_text = transcription
+                                else:
+                                    st.error("No speech detected. Please record again.")
+                            except Exception as e:
+                                st.error(f"Voice transcription failed: {str(e)}")
 
         if user_response_text:
             st.session_state.chat_history.append({"role": "user", "content": user_response_text})
@@ -1353,6 +1387,8 @@ def render_job_management_tab():
         st.session_state.job_agent_history = [
             {"role": "assistant", "content": "Hello! I am your AI Job Management assistant. Tell me how I can help manage your postings (e.g. create a new role, modify requirements, or delete active jobs)."}
         ]
+    if "last_spoken_job_message" not in st.session_state:
+        st.session_state.last_spoken_job_message = ""
 
     # Load active jobs from JSON
     jobs = load_jobs()
@@ -1399,7 +1435,7 @@ def render_job_management_tab():
         st.write("### 🤖 AI Job Management Assistant")
         st.markdown("""
         <div style="background-color: rgba(229, 9, 20, 0.04); border: 1px solid rgba(229, 9, 20, 0.1); border-radius: 10px; padding: 12px; font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;">
-            💬 <strong>Tip:</strong> You can type commands like:<br>
+            💬 <strong>Tip:</strong> You can type or speak commands like:<br>
             • <em>"Create a DevOps role with Docker and AWS"</em><br>
             • <em>"Add Python to requirements for Machine Learning Engineer"</em><br>
             • <em>"Delete the Data Scientist position"</em>
@@ -1407,23 +1443,71 @@ def render_job_management_tab():
         """, unsafe_allow_html=True)
 
         # Chat display container
-        chat_container = st.container(height=350)
+        chat_container = st.container(height=300)
         with chat_container:
             for msg in st.session_state.job_agent_history:
                 with st.chat_message(msg["role"]):
                     st.markdown(msg["content"])
 
-        # Capture prompt
-        agent_input = st.chat_input("Tell the AI to manage jobs...", key="job_agent_chat_input")
-        if agent_input:
+        # Render invisible marker for hover-to-listen trigger
+        if st.session_state.job_agent_history and st.session_state.job_agent_history[-1]["role"] == "assistant":
+            last_msg = st.session_state.job_agent_history[-1]["content"]
+            clean_msg = last_msg.replace('**', '').replace('*', '').replace('`', '').replace('"', '&quot;').replace('\n', ' ')
+            st.markdown(f'<div id="recruiter-chat-column-marker" data-msg="{clean_msg}"></div>', unsafe_allow_html=True)
+
+        # Selector for Type vs Voice input wrapped in a bordered container card
+        with st.container(border=True):
+            tab_type, tab_voice = st.tabs(["⌨️ Type instruction", "🎙️ Record Voice instruction"])
+            agent_input_text = ""
+
+            with tab_type:
+                agent_input = st.chat_input("Tell the AI to manage jobs...", key="job_agent_chat_input")
+                if agent_input:
+                    agent_input_text = agent_input.strip()
+            
+            with tab_voice:
+                st.markdown('<div><span class="recording-indicator"></span><strong>Microphone Ready</strong> - speak clearly and submit.</div>', unsafe_allow_html=True)
+                st.info("🎙️ **Voice Instructions**: Click the microphone icon to record your instruction, then click **Submit Voice Command**.")
+                audio_file = st.audio_input("Record your instruction", key="job_agent_audio_record_key")
+                if audio_file:
+                    st.audio(audio_file)
+                    if st.button("Submit Voice Command", key="job_agent_voice_submit_key", use_container_width=True):
+                        with st.spinner("Transcribing your audio..."):
+                            try:
+                                config = Config.load_config()
+                                from google import genai
+                                from google.genai import types
+                                
+                                client = genai.Client(api_key=config.GEMINI_API_KEY)
+                                audio_bytes = audio_file.read()
+                                
+                                response = client.models.generate_content(
+                                    model='gemini-2.5-flash',
+                                    contents=[
+                                        types.Part.from_bytes(
+                                            data=audio_bytes,
+                                            mime_type=audio_file.type
+                                        ),
+                                        "Transcribe the spoken words in this audio into text accurately. Do not add any conversational framing or headers, just return the text transcription."
+                                    ]
+                                )
+                                transcription = response.text.strip() if response.text else ""
+                                if transcription:
+                                    agent_input_text = transcription
+                                else:
+                                    st.error("No speech detected. Please record again.")
+                            except Exception as e:
+                                st.error(f"Voice transcription failed: {str(e)}")
+
+        if agent_input_text:
             # Append user message
-            st.session_state.job_agent_history.append({"role": "user", "content": agent_input})
+            st.session_state.job_agent_history.append({"role": "user", "content": agent_input_text})
             
             with st.spinner("AI is processing job management instruction..."):
                 try:
                     # Run JobAgent
                     job_agent = JobAgent()
-                    result = job_agent.run(agent_input, jobs)
+                    result = job_agent.run(agent_input_text, jobs)
                     
                     action_taken = result.action.strip().lower()
                     job_title = result.job_title.strip()
@@ -2477,7 +2561,7 @@ elif st.session_state.stage == "final_evaluation":
         if not st.session_state.call_sent and st.session_state.candidate_phone:
             with st.spinner("Initiating automated voice dispatch..."):
                 try:
-                    from src.agents.elevenlabs_agent import ElevenLabsAgent
+                    from src.agents.shared_agents.elevenlabs_agent import ElevenLabsAgent
                     voice_agent = ElevenLabsAgent()
                     call_res = voice_agent.trigger_outbound_call(
                         to_number=st.session_state.candidate_phone.strip(),

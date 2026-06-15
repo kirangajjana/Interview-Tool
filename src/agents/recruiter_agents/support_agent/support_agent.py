@@ -1,5 +1,5 @@
-from src.agents.base_agent import BaseAgent
-from src.agents.support_agent.prompts import SUPPORT_AGENTS_SYSTEM_PROMPT
+from src.agents.shared_agents.base_agent import BaseAgent
+from src.agents.recruiter_agents.support_agent.prompts import SUPPORT_AGENTS_SYSTEM_PROMPT
 from src.models.schemas import SupportDiagnosis
 
 class SupportAgent(BaseAgent):

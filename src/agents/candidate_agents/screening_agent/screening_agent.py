@@ -1,5 +1,5 @@
-from src.agents.base_agent import BaseAgent
-from src.agents.screening_agent.prompts import SCREENING_SYSTEM_PROMPT
+from src.agents.shared_agents.base_agent import BaseAgent
+from src.agents.candidate_agents.screening_agent.prompts import SCREENING_SYSTEM_PROMPT
 from src.models.schemas import ScreeningResult
 
 class ScreeningAgent(BaseAgent):
