@@ -46,5 +46,37 @@
     "confidence_score": 0.9,
     "resolution_log": "",
     "candidate_notification": "Hello Kiran, thank you for reaching out! Your request to reset your test access has been routed to our recruitment team for manual review. We need a bit more detail to understand the issue you encountered. A recruiter will look into this shortly and may reach out for more information. We appreciate your patience!"
+  },
+  {
+    "email": "admin@test.com",
+    "name": "Admin Tester",
+    "job_role": "ai/ml engineer",
+    "message": "hey i am admin iam testing this application i wanted to test this application again can you give me access to retake from starting",
+    "diagnosis": "Candidate is an admin/tester requesting an assessment reset for evaluation and testing purposes.",
+    "severity": "Low",
+    "suggested_action": "Reset MCQ test access",
+    "timestamp": "2026-06-15 19:07:43",
+    "resolved": true,
+    "resolved_by": "AI Auto-Resolver",
+    "justification": "Admin tester reset request for system evaluation and testing.",
+    "confidence_score": 1.0,
+    "resolution_log": "Auto-approved reset. Justification: Admin tester reset request for system evaluation and testing.",
+    "candidate_notification": "Hello Admin Tester, your reset request has been approved! Since you are verifying the platform, your access is reset immediately. You can now re-register or restart the assessment."
+  },
+  {
+    "email": "admin@test.com",
+    "name": "Admin Tester",
+    "job_role": "ai/ml engineer",
+    "message": "hey i am admin iam testing this application i wanted to test this application again can you give me access to retake from starting i wanted to attend from technical mcq test",
+    "diagnosis": "Candidate is an admin/tester requesting an assessment reset for evaluation and testing purposes.",
+    "severity": "Low",
+    "suggested_action": "Reset MCQ test access",
+    "timestamp": "2026-06-15 19:08:32",
+    "resolved": true,
+    "resolved_by": "AI Auto-Resolver",
+    "justification": "Admin tester reset request for system evaluation and testing.",
+    "confidence_score": 1.0,
+    "resolution_log": "Auto-approved reset. Justification: Admin tester reset request for system evaluation and testing.",
+    "candidate_notification": "Hello Admin Tester, your reset request has been approved! Since you are verifying the platform, your access is reset immediately. You can now re-register or restart the assessment."
   }
 ]

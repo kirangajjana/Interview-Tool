@@ -9,6 +9,23 @@ for mod in list(sys.modules.keys()):
     if mod.startswith("src.") or mod == "src":
         del sys.modules[mod]
 
+# Speech synthesis cancellation hook
+if "cancel_speech" not in st.session_state:
+    st.session_state.cancel_speech = False
+
+if st.session_state.cancel_speech:
+    st.components.v1.html(
+        """
+        <script>
+            if (window.parent.speechSynthesis) {
+                window.parent.speechSynthesis.cancel();
+            }
+        </script>
+        """,
+        height=0
+    )
+    st.session_state.cancel_speech = False
+
 from src.config import Config
 from src.parser import ResumeParser
 from src.agents.candidate_agents.screening_agent import ScreeningAgent
@@ -405,14 +422,76 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* Responsive adjustment for extra small screens */
+    
+    /* Target the auth navigation radio group specifically */
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] > div[role="radiogroup"] {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--card-border) !important;
+        border-radius: 100px !important;
+        padding: 6px !important;
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 6px !important;
+        margin-bottom: 25px !important;
+        backdrop-filter: blur(20px) !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+        width: 100% !important;
+        overflow: hidden !important;
+    }
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] > div:first-child {
+        opacity: 0 !important;
+        width: 0px !important;
+        height: 0px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] {
+        background-color: transparent !important;
+        border: none !important;
+        padding: 10px 24px !important;
+        border-radius: 100px !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        cursor: pointer !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"],
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] * {
+        color: var(--text-sub) !important;
+    }
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:hover {
+        background-color: var(--tab-hover-bg) !important;
+    }
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:hover,
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:hover * {
+        color: var(--accent-red) !important;
+    }
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {
+        background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover)) !important;
+        box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4) !important;
+    }
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked),
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) * {
+        color: #ffffff !important;
+    }
     @media (max-width: 640px) {
-        div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] {
+        div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] {
             padding: 8px 12px !important;
             font-size: 0.82rem !important;
         }
     }
-    
+
     /* Custom buttons */
     .stButton>button {
         background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover));
@@ -790,37 +869,6 @@ st.components.v1.html("""
         }, true);
     }
 
-    if (!window.parent.__job_audio_listener_added__) {
-        window.parent.__job_audio_listener_added__ = true;
-        doc.addEventListener('mouseover', function(e) {
-            const marker = doc.getElementById('recruiter-chat-column-marker');
-            if (marker) {
-                const colContainer = marker.closest('[data-testid="stVerticalBlock"]');
-                if (colContainer && colContainer.contains(e.target)) {
-                    const msg = marker.getAttribute('data-msg');
-                    if (msg && window.parent.__last_spoken_hover_msg__ !== msg) {
-                        window.parent.__last_spoken_hover_msg__ = msg;
-                        window.parent.speechSynthesis.cancel();
-                        const utterance = new SpeechSynthesisUtterance(msg);
-                        utterance.rate = 1.05;
-                        const voices = window.parent.speechSynthesis.getVoices();
-                        const engVoice = voices.find(v => v.lang.startsWith('en'));
-                        if (engVoice) utterance.voice = engVoice;
-                        window.parent.speechSynthesis.speak(utterance);
-                    }
-                }
-            }
-        });
-        doc.addEventListener('mouseout', function(e) {
-            const marker = doc.getElementById('recruiter-chat-column-marker');
-            if (marker) {
-                const colContainer = marker.closest('[data-testid="stVerticalBlock"]');
-                if (colContainer && !colContainer.contains(e.relatedTarget)) {
-                    window.parent.__last_spoken_hover_msg__ = "";
-                }
-            }
-        });
-    }
 </script>
 """, height=0)
 
@@ -1585,11 +1633,7 @@ def render_job_management_tab():
                 with st.chat_message(msg["role"]):
                     st.markdown(msg["content"])
 
-        # Render invisible marker for hover-to-listen trigger
-        if st.session_state.job_agent_history and st.session_state.job_agent_history[-1]["role"] == "assistant":
-            last_msg = st.session_state.job_agent_history[-1]["content"]
-            clean_msg = last_msg.replace('**', '').replace('*', '').replace('`', '').replace('"', '&quot;').replace('\n', ' ')
-            st.markdown(f'<div id="recruiter-chat-column-marker" data-msg="{clean_msg}"></div>', unsafe_allow_html=True)
+
 
         # Selector for Type vs Voice input wrapped in a bordered container card
         with st.container(border=True):
@@ -1812,13 +1856,14 @@ def load_candidates():
     except Exception as e:
         return []
 
-def check_duplicate_candidate(email):
+def check_duplicate_candidate(email, job_role):
     email = email.strip().lower()
-    if not email:
+    job_role = job_role.strip().lower()
+    if not email or not job_role:
         return None
     records = load_candidates()
     for rec in records:
-        if rec.get("email", "").strip().lower() == email:
+        if rec.get("email", "").strip().lower() == email and rec.get("job_role", "").strip().lower() == job_role:
             if rec.get("allowed_retake") is True:
                 return None
             return rec
@@ -2197,7 +2242,7 @@ def log_candidate_state(status_override=None):
         records = load_candidates()
         updated = False
         for idx, rec in enumerate(records):
-            if rec.get("email", "").strip().lower() == email.strip().lower():
+            if rec.get("email", "").strip().lower() == email.strip().lower() and rec.get("job_role", "").strip().lower() == role.strip().lower():
                 is_new_registration = (stage == "upload" or status == "Profile Uploaded")
                 candidate_data["allowed_retake"] = False if is_new_registration else rec.get("allowed_retake", False)
                 if not candidate_data["password"]:
@@ -2309,6 +2354,11 @@ if "sidebar_chat_history" not in st.session_state:
         {"role": "assistant", "content": "Hello! I am your Recruitment Assistant. Ask me about available job roles, requirements, or what profiles we look for."}
     ]
 
+if "auth_mode" not in st.session_state:
+    st.session_state.auth_mode = "🔐 Log In to My Profile"
+if "selected_role_val" not in st.session_state:
+    st.session_state.selected_role_val = ""
+
 if "active_scorecard_candidate" not in st.session_state:
     st.session_state.active_scorecard_candidate = ""
 if "recruiter_logged_in" not in st.session_state:
@@ -2336,14 +2386,83 @@ if st.session_state.stage != st.session_state.last_stage:
 st.markdown('<div class="recruit-header">AgentFlow Interview Platform</div>', unsafe_allow_html=True)
 st.markdown('<div class="recruit-sub">AI-Powered Multi-Agent Screening and Evaluation</div>', unsafe_allow_html=True)
 
+def handle_recruiter_logout():
+    st.session_state.recruiter_logged_in = False
+    st.session_state.cancel_speech = True
+
+def handle_apply_now_logged_out(role):
+    st.session_state.selected_role_val = role
+    st.session_state.auth_mode = "📝 Create New Application"
+    st.session_state.auth_mode_selector_radio = "📝 Create New Application"
+    st.session_state.navigation_radio = "🎯 Candidate Assessment"
+    st.session_state.current_page = "🎯 Candidate Assessment"
+
+def handle_apply_now_logged_in_switch(role, user_email):
+    load_candidate_session(user_email, role)
+    st.session_state.navigation_radio = "🎯 Candidate Assessment"
+    st.session_state.current_page = "🎯 Candidate Assessment"
+
+def handle_apply_now_logged_in_new(role):
+    st.session_state.run_auto_apply_for_role = role
+
+if st.session_state.get("run_auto_apply_for_role"):
+    role_to_apply = st.session_state.run_auto_apply_for_role
+    st.session_state.run_auto_apply_for_role = None
+    
+    name = st.session_state.get("candidate_name", "")
+    email = st.session_state.get("candidate_email", "")
+    phone = st.session_state.get("candidate_phone", "")
+    password = st.session_state.get("candidate_password", "")
+    resume_text = st.session_state.get("resume_text", "")
+    experience = st.session_state.get("experience", "Mid Level (3-5 years)")
+    jd_text = PREDEFINED_JDS.get(role_to_apply, "")
+    
+    with st.spinner("Applying and screening your profile..."):
+        try:
+            screening_agent = ScreeningAgent()
+            res = screening_agent.run(
+                resume_text=resume_text,
+                job_role=role_to_apply,
+                experience=experience,
+                job_description=jd_text
+            )
+            st.session_state.job_role = role_to_apply
+            st.session_state.job_description = jd_text
+            st.session_state.screening_result = res
+            if res.qualified:
+                st.session_state.stage = "proctoring_instruction"
+            else:
+                st.session_state.stage = "screening_failed"
+            
+            st.session_state.mcqs = []
+            st.session_state.mcq_answers = {}
+            st.session_state.mcq_score = 0
+            st.session_state.mcq_passed = False
+            st.session_state.chat_history = []
+            st.session_state.interview_concluded = False
+            st.session_state.evaluation_result = None
+            st.session_state.tab_switches = 0
+            st.session_state.proctoring_warnings = []
+            st.session_state.proctoring_violated = False
+            st.session_state.proctoring_report = None
+            st.session_state.email_sent = False
+            st.session_state.call_sent = False
+            
+            log_candidate_state()
+            st.success(f"Successfully applied for {role_to_apply}!")
+            st.session_state.navigation_radio = "🎯 Candidate Assessment"
+            st.session_state.current_page = "🎯 Candidate Assessment"
+            time.sleep(0.5)
+            st.rerun()
+        except Exception as e:
+            st.error(f"Error applying for role: {str(e)}")
+
 # ----------------- SIDEBAR HR CHATBOT -----------------
 with st.sidebar:
     render_sidebar_chatbot()
     if st.session_state.get("recruiter_logged_in", False):
         st.markdown("---")
-        if st.button("🔒 Recruiter Logout", key="sidebar_logout_btn", use_container_width=True):
-            st.session_state.recruiter_logged_in = False
-            st.rerun()
+        st.button("🔒 Recruiter Logout", key="sidebar_logout_btn", use_container_width=True, on_click=handle_recruiter_logout)
 
 # ----------------- PAGE NAVIGATION -----------------
 if "current_page" not in st.session_state:
@@ -2355,7 +2474,10 @@ default_nav_idx = nav_options.index(st.session_state.current_page) if st.session
 st.markdown('<div class="nav-container">', unsafe_allow_html=True)
 page = st.radio("Navigation", nav_options, index=default_nav_idx, horizontal=True, label_visibility="collapsed", key="navigation_radio")
 st.markdown('</div>', unsafe_allow_html=True)
-st.session_state.current_page = page
+if page != st.session_state.current_page:
+    st.session_state.current_page = page
+    st.session_state.cancel_speech = True
+    st.rerun()
 
 if page == "📋 Open Positions":
     st.markdown("""
@@ -2404,10 +2526,15 @@ if page == "📋 Open Positions":
             # Action button
             col1, col2 = st.columns([7, 2.5])
             with col2:
-                if st.button(f"Apply Now →", key=f"apply_btn_{role}", use_container_width=True):
-                    st.session_state.selected_role_val = role
-                    st.session_state.current_page = "🎯 Candidate Assessment"
-                    st.rerun()
+                if st.session_state.get("candidate_logged_in", False):
+                    user_email = st.session_state.get("candidate_email", "")
+                    dup = check_duplicate_candidate(user_email, role)
+                    if dup:
+                        st.button(f"Apply Now →", key=f"apply_btn_{role}", on_click=handle_apply_now_logged_in_switch, args=(role, user_email), use_container_width=True)
+                    else:
+                        st.button(f"Apply Now →", key=f"apply_btn_{role}", on_click=handle_apply_now_logged_in_new, args=(role,), use_container_width=True)
+                else:
+                    st.button(f"Apply Now →", key=f"apply_btn_{role}", on_click=handle_apply_now_logged_out, args=(role,), use_container_width=True)
             st.markdown("<div style='margin-bottom: 35px;'></div>", unsafe_allow_html=True)
     st.stop()
 
@@ -2447,9 +2574,7 @@ elif page == "🔒 Recruiter Portal":
         """, unsafe_allow_html=True)
     with col_logout:
         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-        if st.button("🚪 Log Out", key="recruiter_main_logout_btn", use_container_width=True):
-            st.session_state.recruiter_logged_in = False
-            st.rerun()
+        st.button("🚪 Log Out", key="recruiter_main_logout_btn", use_container_width=True, on_click=handle_recruiter_logout)
     
     st.write("")
     
@@ -2555,11 +2680,11 @@ elif page == "🔒 Recruiter Portal":
                     # Action Buttons
                     col1, col2, col3 = st.columns([3, 2, 5])
                     with col1:
-                        if st.button("🔓 Resolve & Allow Retake", key=f"resolve_retake_{idx}_{t.get('email')}", use_container_width=True):
+                        if st.button("🔓 Resolve & Allow Retake", key=f"resolve_retake_{idx}_{t.get('email')}_{t.get('job_role')}", use_container_width=True):
                             # Grant Retake
                             records = load_candidates()
                             for r in records:
-                                if r.get("email", "").strip().lower() == t.get("email", "").strip().lower():
+                                if r.get("email", "").strip().lower() == t.get("email", "").strip().lower() and r.get("job_role", "").strip().lower() == t.get("job_role", "").strip().lower():
                                     r["allowed_retake"] = True
                                     r["status"] = "Retake Allowed"
                                     break
@@ -2568,7 +2693,7 @@ elif page == "🔒 Recruiter Portal":
                             
                             # Mark ticket as resolved
                             for tk in tickets:
-                                if tk.get("email", "").strip().lower() == t.get("email", "").strip().lower() and not tk.get("resolved", False):
+                                if tk.get("email", "").strip().lower() == t.get("email", "").strip().lower() and tk.get("job_role", "").strip().lower() == t.get("job_role", "").strip().lower() and not tk.get("resolved", False):
                                     tk["resolved"] = True
                                     tk["resolved_by"] = "Recruiter"
                                     break
@@ -2578,10 +2703,10 @@ elif page == "🔒 Recruiter Portal":
                             st.rerun()
                             
                     with col2:
-                        if st.button("Dismiss", key=f"dismiss_ticket_{idx}_{t.get('email')}", use_container_width=True):
+                        if st.button("Dismiss", key=f"dismiss_ticket_{idx}_{t.get('email')}_{t.get('job_role')}", use_container_width=True):
                             # Mark ticket as resolved
                             for tk in tickets:
-                                if tk.get("email", "").strip().lower() == t.get("email", "").strip().lower() and not tk.get("resolved", False):
+                                if tk.get("email", "").strip().lower() == t.get("email", "").strip().lower() and tk.get("job_role", "").strip().lower() == t.get("job_role", "").strip().lower() and not tk.get("resolved", False):
                                     tk["resolved"] = True
                                     tk["resolved_by"] = "Recruiter Dismissal"
                                     break
@@ -2618,13 +2743,21 @@ elif page == "🔒 Recruiter Portal":
         st.stop()
 
 # Hydrate Streamlit session state from JSON record on candidate login
-def load_candidate_session(email):
+def load_candidate_session(email, job_role=None):
     records = load_candidates()
     matched = None
-    for r in records:
-        if r.get("email", "").strip().lower() == email.strip().lower():
-            matched = r
-            break
+    email_clean = email.strip().lower()
+    if job_role:
+        job_role_clean = job_role.strip().lower()
+        for r in records:
+            if r.get("email", "").strip().lower() == email_clean and r.get("job_role", "").strip().lower() == job_role_clean:
+                matched = r
+                break
+    if not matched:
+        for r in records:
+            if r.get("email", "").strip().lower() == email_clean:
+                matched = r
+                break
             
     if matched:
         st.session_state.candidate_name = matched.get("name", "")
@@ -2700,6 +2833,11 @@ def restart_process():
     st.session_state.proctoring_report = None
     st.session_state.candidate_logged_in = False
     st.session_state.candidate_user_email = ""
+    st.session_state.selected_role_val = ""
+    st.session_state.auth_mode = "🔐 Log In to My Profile"
+    st.session_state.auth_mode_selector_radio = "🔐 Log In to My Profile"
+    st.session_state.navigation_radio = "🎯 Candidate Assessment"
+    st.session_state.cancel_speech = True
     st.rerun()
 
 # Render Candidate login and registration portal tabs
@@ -2710,10 +2848,23 @@ def render_candidate_auth_portal():
         <div style="color: var(--text-sub); font-size: 0.95rem;">Log in to track your application, complete assessments, or register to apply.</div>
     </div>
     """, unsafe_allow_html=True)
+
+    auth_modes = ["🔐 Log In to My Profile", "📝 Create New Application"]
+    default_idx = auth_modes.index(st.session_state.auth_mode) if st.session_state.auth_mode in auth_modes else 0
     
-    auth_tab_login, auth_tab_signup = st.tabs(["🔐 Log In to My Profile", "📝 Create New Application"])
+    st.markdown('<div class="auth-nav-container">', unsafe_allow_html=True)
+    auth_mode = st.radio(
+        "Auth Mode Selector",
+        auth_modes,
+        index=default_idx,
+        horizontal=True,
+        label_visibility="collapsed",
+        key="auth_mode_selector_radio"
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.session_state.auth_mode = auth_mode
     
-    with auth_tab_login:
+    if st.session_state.auth_mode == "🔐 Log In to My Profile":
         st.write("### Log In")
         with st.form("candidate_login_form"):
             login_email = st.text_input("Registered Email Address", placeholder="name@example.com")
@@ -2734,7 +2885,7 @@ def render_candidate_auth_portal():
                         if matched.get("password") == login_password:
                             st.session_state.candidate_logged_in = True
                             st.session_state.candidate_user_email = matched.get("email")
-                            load_candidate_session(matched.get("email"))
+                            load_candidate_session(matched.get("email"), matched.get("job_role"))
                             st.success("Welcome back! Loading your profile...")
                             time.sleep(0.5)
                             st.rerun()
@@ -2743,14 +2894,19 @@ def render_candidate_auth_portal():
                     else:
                         st.error("No application found with this email. Please switch to the Sign Up tab to create one.")
                         
-    with auth_tab_signup:
+    else:
         st.write("### Sign Up & Apply")
         candidate_name = st.text_input("Full Name", placeholder="John Doe", key="signup_name")
         candidate_email = st.text_input("Email Address", placeholder="john.doe@example.com", key="signup_email")
         candidate_phone = st.text_input("Phone Number", placeholder="+1234567890", key="signup_phone")
         candidate_password = st.text_input("Create Password", type="password", key="signup_password")
         
-        selected_role = st.selectbox("Applying For Job Role", list(PREDEFINED_JDS.keys()), key="signup_role_select")
+        roles_list = list(PREDEFINED_JDS.keys())
+        default_role_idx = 0
+        if st.session_state.get("selected_role_val") in roles_list:
+            default_role_idx = roles_list.index(st.session_state.selected_role_val)
+            
+        selected_role = st.selectbox("Applying For Job Role", roles_list, index=default_role_idx, key="signup_role_select")
         if selected_role == "Custom / Write your own":
             job_role = st.text_input("Custom Job Role Name", placeholder="e.g. DevOps Engineer", key="signup_custom_role")
             job_description = st.text_area("Job Description Details", height=150, placeholder="Paste requirements here...", key="signup_custom_jd")
@@ -2771,51 +2927,60 @@ def render_candidate_auth_portal():
             elif not uploaded_file:
                 st.error("Please upload your resume in PDF format.")
             else:
-                duplicate_record = check_duplicate_candidate(candidate_email)
+                duplicate_record = check_duplicate_candidate(candidate_email, job_role)
                 if duplicate_record:
-                    st.error("An application with this email already exists. Please switch to the Log In tab.")
+                    st.error("An application with this email already exists for this role. Please log in to view its status.")
                 else:
-                    with st.spinner("Extracting text from resume..."):
-                        try:
-                            resume_text = ResumeParser.extract_text(uploaded_file)
-                            st.session_state.candidate_name = candidate_name
-                            st.session_state.candidate_email = candidate_email
-                            st.session_state.candidate_phone = candidate_phone
-                            st.session_state.candidate_password = candidate_password
-                            st.session_state.job_role = job_role
-                            st.session_state.experience = experience
-                            st.session_state.job_description = job_description
-                            st.session_state.resume_text = resume_text
-                        except Exception as e:
-                            st.error(f"Error parsing resume: {str(e)}")
-                            st.stop()
-                            
-                    with st.spinner("Initial Screening Agent checking eligibility..."):
-                        try:
-                            screening_agent = ScreeningAgent()
-                            res = screening_agent.run(
-                                resume_text=st.session_state.resume_text,
-                                job_role=st.session_state.job_role,
-                                experience=st.session_state.experience,
-                                job_description=st.session_state.job_description
-                            )
-                            st.session_state.screening_result = res
-                            
-                            if res.qualified:
-                                st.session_state.stage = "proctoring_instruction"
-                            else:
-                                st.session_state.stage = "screening_failed"
-                            
-                            st.session_state.candidate_logged_in = True
-                            st.session_state.candidate_user_email = candidate_email
-                            st.session_state.candidate_password = candidate_password
-                            
-                            log_candidate_state()
-                            st.success("Application successfully submitted!")
-                            time.sleep(0.5)
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Error during screening: {str(e)}")
+                    records = load_candidates()
+                    existing_user = None
+                    for rec in records:
+                        if rec.get("email", "").strip().lower() == candidate_email.strip().lower():
+                            existing_user = rec
+                            break
+                    if existing_user and existing_user.get("password") != candidate_password:
+                        st.error("This email address is already registered. Please enter the correct password for your account to apply for a new role.")
+                    else:
+                        with st.spinner("Extracting text from resume..."):
+                            try:
+                                resume_text = ResumeParser.extract_text(uploaded_file)
+                                st.session_state.candidate_name = candidate_name
+                                st.session_state.candidate_email = candidate_email
+                                st.session_state.candidate_phone = candidate_phone
+                                st.session_state.candidate_password = candidate_password
+                                st.session_state.job_role = job_role
+                                st.session_state.experience = experience
+                                st.session_state.job_description = job_description
+                                st.session_state.resume_text = resume_text
+                            except Exception as e:
+                                st.error(f"Error parsing resume: {str(e)}")
+                                st.stop()
+                                
+                        with st.spinner("Initial Screening Agent checking eligibility..."):
+                            try:
+                                screening_agent = ScreeningAgent()
+                                res = screening_agent.run(
+                                    resume_text=st.session_state.resume_text,
+                                    job_role=st.session_state.job_role,
+                                    experience=st.session_state.experience,
+                                    job_description=st.session_state.job_description
+                                )
+                                st.session_state.screening_result = res
+                                
+                                if res.qualified:
+                                    st.session_state.stage = "proctoring_instruction"
+                                else:
+                                    st.session_state.stage = "screening_failed"
+                                
+                                st.session_state.candidate_logged_in = True
+                                st.session_state.candidate_user_email = candidate_email
+                                st.session_state.candidate_password = candidate_password
+                                
+                                log_candidate_state()
+                                st.success("Application successfully submitted!")
+                                time.sleep(0.5)
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error during screening: {str(e)}")
 
 # Render Candidate dashboard hub
 def render_candidate_hub_portal():
@@ -2830,7 +2995,16 @@ def render_candidate_hub_portal():
     role = st.session_state.get("job_role", "")
     stage = st.session_state.get("stage", "upload")
     
-    col_hdr, col_logout = st.columns([3, 1])
+    # Find all roles for this email
+    records = load_candidates()
+    user_roles = [rec.get("job_role", "") for rec in records if rec.get("email", "").strip().lower() == email.strip().lower()]
+    
+    if len(user_roles) > 1:
+        col_hdr, col_switcher, col_logout = st.columns([3.5, 2.5, 1])
+    else:
+        col_hdr, col_logout = st.columns([3, 1])
+        col_switcher = None
+        
     with col_hdr:
         st.markdown(f"""
         <div class="glass-card" style="margin-bottom: 0px; padding: 15px 20px !important; border-left: 6px solid var(--accent-red);">
@@ -2838,10 +3012,28 @@ def render_candidate_hub_portal():
             <span style="color: var(--text-sub); font-size: 0.9rem;">Target Position: <strong>{role}</strong> | Account: {email}</span>
         </div>
         """, unsafe_allow_html=True)
+        
+    if col_switcher is not None:
+        with col_switcher:
+            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+            try:
+                current_idx = user_roles.index(role)
+            except ValueError:
+                current_idx = 0
+            selected_role_switch = st.selectbox(
+                "Switch Job Role View",
+                user_roles,
+                index=current_idx,
+                key="candidate_role_switcher"
+            )
+            if selected_role_switch != role:
+                load_candidate_session(email, selected_role_switch)
+                st.session_state.cancel_speech = True
+                st.rerun()
+                
     with col_logout:
         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-        if st.button("🚪 Log Out", key="candidate_portal_logout_btn", use_container_width=True):
-            restart_process()
+        st.button("🚪 Log Out", key="candidate_portal_logout_btn", use_container_width=True, on_click=restart_process)
             
     st.write("")
     
@@ -2962,7 +3154,7 @@ def render_candidate_hub_portal():
         records = load_candidates()
         matched = None
         for r in records:
-            if r.get("email", "").strip().lower() == email.strip().lower():
+            if r.get("email", "").strip().lower() == email.strip().lower() and r.get("job_role", "").strip().lower() == role.strip().lower():
                 matched = r
                 break
         
@@ -3049,7 +3241,7 @@ def render_candidate_hub_portal():
                     # Update candidates.json
                     records = load_candidates()
                     for rec in records:
-                        if rec.get("email", "").strip().lower() == "admin@test.com":
+                        if rec.get("email", "").strip().lower() == "admin@test.com" and rec.get("job_role", "").strip().lower() == role.strip().lower():
                             rec["allowed_retake"] = False
                             rec["stage"] = "proctoring_instruction"
                             rec["status"] = "Reviewing Assessment Rules"
@@ -3084,7 +3276,7 @@ def render_candidate_hub_portal():
             st.write("If you faced any system error, browser freeze, or accidental exit, request an assessment reset. The AI Support Agent will analyze your ticket and resolve it if eligible.")
             
             tickets = load_issues()
-            candidate_tickets = [t for t in tickets if t.get("email", "").strip().lower() == email.strip().lower()]
+            candidate_tickets = [t for t in tickets if t.get("email", "").strip().lower() == email.strip().lower() and t.get("job_role", "").strip().lower() == role.strip().lower()]
             
             if candidate_tickets:
                 st.write("##### ⏳ Your Active Support Tickets")
@@ -3117,7 +3309,7 @@ def render_candidate_hub_portal():
                             
                             records = load_candidates()
                             for rec in records:
-                                if rec.get("email", "").strip().lower() == email.strip().lower():
+                                if rec.get("email", "").strip().lower() == email.strip().lower() and rec.get("job_role", "").strip().lower() == role.strip().lower():
                                     rec["allowed_retake"] = False
                                     rec["stage"] = "proctoring_instruction"
                                     rec["status"] = "Reviewing Assessment Rules"
@@ -3180,7 +3372,7 @@ def render_candidate_hub_portal():
                                 if is_auto_resolved:
                                     records = load_candidates()
                                     for r in records:
-                                        if r.get("email", "").strip().lower() == email.strip().lower():
+                                        if r.get("email", "").strip().lower() == email.strip().lower() and r.get("job_role", "").strip().lower() == role.strip().lower():
                                             r["allowed_retake"] = True
                                             r["status"] = "Retake Allowed"
                                             break
@@ -3190,7 +3382,7 @@ def render_candidate_hub_portal():
                                 tickets = load_issues()
                                 updated = False
                                 for idx, t in enumerate(tickets):
-                                    if t.get("email", "").strip().lower() == email.strip().lower() and not t.get("resolved", False):
+                                    if t.get("email", "").strip().lower() == email.strip().lower() and t.get("job_role", "").strip().lower() == role.strip().lower() and not t.get("resolved", False):
                                         tickets[idx] = new_ticket
                                         updated = True
                                         break
