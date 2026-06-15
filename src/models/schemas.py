@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
 
 class ScreeningResult(BaseModel):
     qualified: bool = Field(description="Set to True if the candidate has ANY software, coding, AI, ML, data, or technical knowledge. Set to False ONLY if the resume has absolutely zero relevance to technology/software.")
@@ -39,3 +39,10 @@ class SupportDiagnosis(BaseModel):
 class ClarificationResult(BaseModel):
     is_clarification_request: bool = Field(description="Set to True if the candidate is asking to repeat the question, clarify a term, or explain the question again. Set to False if the candidate is answering the question normally.")
     clarified_response: str = Field(description="The repeated question or clarified explanation formulated in a friendly, conversational manner, addressing their request directly.")
+
+class JobAction(BaseModel):
+    action: str = Field(description="The action to take: 'add' (if the recruiter wants to add a new job opening), 'update' (if they want to update or modify an existing job), 'delete' (if they want to delete/remove a job), or 'none' (if the query is conversational/unrelated or they ask a general question).")
+    job_title: str = Field(description="The exact title of the job role (e.g. 'Machine Learning Engineer', 'DevOps Engineer'). For update/delete, it must match an existing job title.")
+    job_description: str = Field("", description="The detailed, professional markdown job description. For 'add', this must be generated based on the recruiter's brief description or notes. For 'update', it must be the updated complete job description containing the requested changes.")
+    difficulty: str = Field("Medium", description="The target difficulty level for candidate evaluation: 'Very Easy', 'Easy', 'Medium', or 'Hard'.")
+    explanation: str = Field(description="A polite, direct message explaining what the agent did (or why it couldn't do it) and summarizing the final state of the job role.")

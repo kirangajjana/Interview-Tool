@@ -2,6 +2,13 @@ import streamlit as st
 import time
 import json
 import os
+import sys
+
+# Force clear local module cache to prevent Streamlit from holding onto stale imports on hot-reload
+for mod in list(sys.modules.keys()):
+    if mod.startswith("src.") or mod == "src":
+        del sys.modules[mod]
+
 from src.config import Config
 from src.parser import ResumeParser
 from src.agents.screening_agent import ScreeningAgent
@@ -10,6 +17,7 @@ from src.agents.interview_agent import InterviewAgent
 from src.agents.email_agent import EmailAgent
 from src.agents.support_agent import SupportAgent
 from src.agents.repeat_agent import RepeatAgent
+from src.agents.job_agent import JobAgent
 
 # Set page configurations
 st.set_page_config(
@@ -531,45 +539,164 @@ st.markdown("""
         margin-right: 8px;
         vertical-align: middle;
     }
-    
-    /* Recruiter Portal Dashboard metrics */
+      /* Recruiter Portal Dashboard metrics */
     .metrics-grid {
-        display: flex;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 20px;
         margin-bottom: 30px;
-        flex-wrap: wrap;
+        width: 100%;
     }
     .metric-card {
-        background: var(--card-bg);
-        border: 1px solid var(--card-border);
-        border-radius: 12px;
-        padding: 22px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+        background: var(--card-bg) !important;
+        border: 1px solid var(--card-border) !important;
+        border-radius: 16px !important;
+        padding: 24px !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03) !important;
         display: flex;
-        flex-direction: column;
-        gap: 6px;
-        flex: 1;
-        min-width: 200px;
-        transition: transform 0.3s ease;
-        animation: fadeInUp 0.5s ease both;
+        align-items: center;
+        gap: 20px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
     .metric-card:hover {
-        transform: translateY(-2px);
+        transform: translateY(-4px) !important;
+        border-color: var(--card-hover-border) !important;
+        box-shadow: 0 15px 30px rgba(229, 9, 20, 0.08), 0 10px 20px rgba(0, 0, 0, 0.05) !important;
+    }
+    .metric-icon-wrapper {
+        background-color: var(--badge-red-bg);
+        border-radius: 12px;
+        width: 54px;
+        height: 54px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    .metric-text-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
     }
     .metric-val {
-        font-size: 2.2rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin: 0;
+        font-size: 2.25rem !important;
+        font-weight: 700 !important;
+        background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover)) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        margin: 0 !important;
+        line-height: 1.1 !important;
     }
     .metric-label {
-        font-size: 0.82rem;
+        font-size: 0.8rem !important;
+        font-weight: 700 !important;
+        color: var(--text-sub) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        margin: 0 !important;
+    }
+    
+    /* Candidate Card Grid & Cards */
+    .cand-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+        margin-bottom: 30px;
+    }
+    .cand-card {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--card-border) !important;
+        border-radius: 16px !important;
+        padding: 24px !important;
+        transition: all 0.3s ease !important;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        position: relative;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02) !important;
+    }
+    .cand-card:hover {
+        border-color: var(--card-hover-border) !important;
+        transform: translateY(-4px) !important;
+        box-shadow: 0 12px 30px rgba(229, 9, 20, 0.06), 0 5px 15px rgba(0, 0, 0, 0.05) !important;
+    }
+    .cand-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+    .cand-card-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .cand-card-name {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+    }
+    .cand-card-role {
+        font-size: 0.88rem;
+        color: var(--text-sub);
+        font-weight: 500;
+    }
+    .cand-card-score {
+        background-color: var(--badge-red-bg);
+        border: 1px solid rgba(229, 9, 20, 0.1);
+        padding: 8px 12px;
+        border-radius: 10px;
+        text-align: center;
+    }
+    .cand-card-score-val {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--accent-red);
+        line-height: 1;
+    }
+    .cand-card-score-lbl {
+        font-size: 0.68rem;
         font-weight: 600;
         color: var(--text-sub);
         text-transform: uppercase;
-        letter-spacing: 0.8px;
+        letter-spacing: 0.5px;
+        margin-top: 2px;
+    }
+    .cand-card-meta {
+        font-size: 0.88rem;
+        color: var(--text-sub);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        border-top: 1px solid var(--card-border);
+        padding-top: 12px;
+    }
+    
+    /* Job Card Dashboard */
+    .job-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 20px;
+        margin-bottom: 25px;
+    }
+    .job-card {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--card-border) !important;
+        border-radius: 14px !important;
+        padding: 20px !important;
+        transition: all 0.3s ease !important;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02) !important;
+    }
+    .job-card:hover {
+        border-color: var(--card-hover-border) !important;
+        transform: translateY(-4px) !important;
+        box-shadow: 0 12px 25px rgba(229, 9, 20, 0.05) !important;
     }
     
     /* Custom MCQ option cards customization */
@@ -603,6 +730,23 @@ st.markdown("""
         border-radius: 50%;
         padding: 2px;
         background-color: var(--badge-red-bg);
+    }
+    
+    @keyframes recordingPulse {
+        0% { transform: scale(1); opacity: 0.8; }
+        50% { transform: scale(1.2) !important; opacity: 1; box-shadow: 0 0 15px rgba(229, 9, 20, 0.6); }
+        100% { transform: scale(1); opacity: 0.8; }
+    }
+    .recording-indicator {
+        width: 14px;
+        height: 14px;
+        background-color: var(--accent-red);
+        border-radius: 50%;
+        display: inline-block;
+        animation: recordingPulse 1.5s infinite;
+        margin-right: 8px;
+        vertical-align: middle;
+        box-shadow: 0 0 8px var(--accent-red);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -685,6 +829,735 @@ def format_chat_text(text):
     # Line breaks
     formatted = formatted.replace("\n", "<br>")
     return formatted
+
+# ----------------- STREAMLIT FRAGMENTS FOR UI/UX ENHANCEMENTS -----------------
+
+@st.fragment
+def render_sidebar_chatbot():
+    st.markdown("### 🤖 Recruitment Assistant")
+    st.write("Ask about open roles and job requirements:")
+
+    # Capture query input
+    sidebar_input = st.chat_input("Ask about roles...", key="sidebar_chatbot_input_key")
+    if sidebar_input:
+        # Append and show user message immediately
+        st.session_state.sidebar_chat_history.append({"role": "user", "content": sidebar_input})
+        
+        # Generate bot response via Gemini
+        try:
+            # Load configuration and initialize inline chain
+            config = Config.load_config()
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            from langchain_core.prompts import ChatPromptTemplate
+            
+            chat_model = ChatGoogleGenerativeAI(
+                model="gemini-2.5-flash",
+                google_api_key=config.GEMINI_API_KEY,
+                temperature=0.3
+            )
+            
+            # Format JD details
+            jds_text = ""
+            for role, jd in PREDEFINED_JDS.items():
+                if role != "Custom / Write your own":
+                    jds_text += f"- Job Role: {role}\n  Description: {jd}\n\n"
+                    
+            system_prompt = f"""You are a helpful, friendly HR chatbot assistant for our recruitment platform.
+Your job is to answer user queries about open roles, available positions, job requirements, and technical expectations.
+
+Here is the list of open positions and their details:
+{jds_text}
+
+Rules:
+1. Only provide answers based on the open roles listed above.
+2. If they ask if a specific role is available, confirm if it is in the list.
+3. If they ask about a role that is NOT in the list, politely inform them it's currently not listed, but they can select 'Custom / Write your own' in the Candidate Assessment tab to evaluate their custom profile.
+4. Keep your responses short, helpful, and professional (max 2-3 sentences).
+"""
+            history_str = ""
+            for m in st.session_state.sidebar_chat_history[:-1]:
+                role_name = "Assistant" if m["role"] == "assistant" else "User"
+                history_str += f"{role_name}: {m['content']}\n"
+            
+            prompt_tpl = ChatPromptTemplate.from_messages([
+                ("system", system_prompt),
+                ("human", "Conversation History:\n{history}\n\nUser Question: {input_text}")
+            ])
+            
+            chain = prompt_tpl | chat_model
+            response = chain.invoke({
+                "history": history_str,
+                "input_text": sidebar_input
+            })
+            
+            bot_text = response.content.strip()
+            st.session_state.sidebar_chat_history.append({"role": "assistant", "content": bot_text})
+        except Exception as e:
+            st.session_state.sidebar_chat_history.append({"role": "assistant", "content": f"Assistant error: {str(e)}"})
+
+    # Render chatbot transcript in sidebar
+    for msg in st.session_state.sidebar_chat_history:
+        with st.chat_message(msg["role"]):
+            st.write(msg["content"])
+
+
+@st.fragment
+def render_candidate_hub():
+    # Load candidates inside the fragment so updates will auto-reload
+    candidates = load_candidates()
+    if not candidates:
+        st.info("No candidates have started or completed the test yet.")
+        return
+
+    import pandas as pd
+    df_candidates = pd.DataFrame(candidates)
+    
+    # Sort candidates by match_score descending if it exists
+    if "match_score" in df_candidates.columns:
+        df_candidates = df_candidates.sort_values(by="match_score", ascending=False)
+    
+    # Collapsible tabular leaderboard
+    with st.expander("📊 View Complete Tabular Leaderboard Table"):
+        display_cols = ["name", "email", "job_role", "match_score", "mcq_score", "selection", "status"]
+        for col in display_cols:
+            if col not in df_candidates.columns:
+                df_candidates[col] = "N/A"
+        df_display = df_candidates[display_cols]
+        df_display.columns = ["Name", "Email", "Applied Role", "Match Score (%)", "MCQ Score", "Selection Recommendation", "Pipeline Stage"]
+        st.dataframe(df_display, use_container_width=True)
+    
+    st.markdown("---")
+    
+    # Live search filter bar
+    search_query = st.text_input("🔍 Live Candidate Search & Filter", "", placeholder="Search by name, email, or job role...", key="candidate_search_input")
+    
+    filtered_cands = candidates
+    if search_query.strip():
+        q = search_query.strip().lower()
+        filtered_cands = [c for c in candidates if q in c.get("name", "").lower() or q in c.get("email", "").lower() or q in c.get("job_role", "").lower()]
+        
+    if not filtered_cands:
+        st.warning("No candidates match your search query.")
+        return
+        
+    # Split Layout: Left side candidate cards list, Right side details scorecard
+    col_left, col_right = st.columns([1.1, 2])
+    
+    # Set default candidate if not selected or if the selected one is no longer available in filtered list
+    options = [f"{c['name']} ({c['email']}) - {c['job_role']}" for c in filtered_cands]
+    if "active_scorecard_candidate" not in st.session_state or st.session_state.active_scorecard_candidate not in options:
+        st.session_state.active_scorecard_candidate = options[0]
+        
+    selected_cand_str = st.session_state.active_scorecard_candidate
+    
+    matched_candidate = None
+    for c in filtered_cands:
+        c_str = f"{c['name']} ({c['email']}) - {c['job_role']}"
+        if c_str == selected_cand_str:
+            matched_candidate = c
+            break
+            
+    with col_left:
+        st.write("### 👥 Applicants List")
+        # Loop over candidates and draw left cards
+        for idx, c in enumerate(filtered_cands):
+            c_str = f"{c['name']} ({c['email']}) - {c['job_role']}"
+            score = int(c.get("match_score", 0))
+            status = c.get("status", "Applied")
+            status_color = "#3b82f6"
+            if "Screening Failed" in status or "Failed" in status:
+                status_color = "#ef4444"
+            elif "Evaluation" in status or "Hired" in status or "Passed" in status:
+                status_color = "#10b981"
+            elif "Interview" in status:
+                status_color = "#f59e0b"
+                
+            is_active = (c_str == selected_cand_str)
+            active_border = "border: 2px solid var(--accent-red) !important; box-shadow: 0 4px 15px rgba(229, 9, 20, 0.15) !important;" if is_active else ""
+            
+            card_html = f"""
+            <div class="cand-card" style="margin-bottom: 12px; padding: 15px; border-radius: 12px; {active_border}">
+                <div class="cand-card-header" style="gap: 5px; margin-bottom: 5px;">
+                    <div class="cand-card-info">
+                        <span style="font-weight: 700; font-size: 1.05rem; color: var(--text-main);">👤 {c['name']}</span>
+                        <span style="font-size: 0.8rem; color: var(--text-sub);">💼 {c['job_role']}</span>
+                    </div>
+                    <div class="cand-card-score" style="padding: 4px 8px; border-radius: 8px;">
+                        <span style="font-size: 1.1rem; font-weight: 700; color: var(--accent-red);">{score}%</span>
+                        <span style="font-size: 0.6rem; color: var(--text-sub); display: block; margin-top: -2px;">Match</span>
+                    </div>
+                </div>
+                <div style="font-size: 0.82rem; margin-top: 8px; display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--card-border); padding-top: 8px; color: var(--text-sub);">
+                    <div>📧 {c['email']}</div>
+                    <div>📌 Stage: <span style="color: {status_color}; font-weight: 700;">● {status}</span></div>
+                </div>
+            </div>
+            """
+            st.markdown(card_html, unsafe_allow_html=True)
+            if st.button("👁️ View Scorecard", key=f"sel_cand_{idx}_{c['email']}", use_container_width=True):
+                st.session_state.active_scorecard_candidate = c_str
+                
+    with col_right:
+        if matched_candidate:
+            st.markdown(f"""
+            <div class="glass-card" style="margin-bottom: 15px; border-left: 6px solid var(--accent-red); padding: 20px !important;">
+                <h3 style="margin: 0; color: var(--text-main);">📊 Scorecard: {matched_candidate['name']}</h3>
+                <span style="color: var(--text-sub); font-size: 0.9rem;">Target Position: <strong>{matched_candidate['job_role']}</strong></span>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            score_tab1, score_tab2, score_tab3 = st.tabs(["📊 Match Analysis", "💬 Interview Transcript", "⚙️ Administrative Controls"])
+            
+            with score_tab1:
+                recommendation = matched_candidate.get("selection", "N/A")
+                if "Recommended" in recommendation or "hire" in recommendation.lower():
+                    rec_badge_html = f'<div style="background-color: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; margin-bottom: 20px;"><span style="font-size: 2rem;">🏆</span><div><div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #10b981; font-weight: 700;">AI Hiring Committee Recommendation</div><div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">{recommendation}</div></div></div>'
+                else:
+                    rec_badge_html = f'<div style="background-color: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.12); border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; margin-bottom: 20px;"><span style="font-size: 2rem;">⚠️</span><div><div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #ef4444; font-weight: 700;">AI Hiring Recommendation</div><div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">{recommendation}</div></div></div>'
+                st.markdown(rec_badge_html, unsafe_allow_html=True)
+                
+                score = int(matched_candidate.get("match_score", 0))
+                st.write(f"**AI Match Score**: **{score}%**")
+                st.progress(score / 100.0)
+                
+                status = matched_candidate.get("status", "Applied")
+                status_badge_html = ""
+                if "Screening Failed" in status or "Failed" in status:
+                    status_badge_html = f'<span style="background-color: rgba(239, 68, 68, 0.12); color: #ef4444; padding: 3px 8px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">🔴 {status}</span>'
+                elif "Evaluation" in status or "Hired" in status or "Passed" in status:
+                    status_badge_html = f'<span style="background-color: rgba(16, 185, 129, 0.12); color: #10b981; padding: 3px 8px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">🟢 {status}</span>'
+                else:
+                    status_badge_html = f'<span style="background-color: rgba(245, 158, 11, 0.12); color: #f59e0b; padding: 3px 8px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">🟡 {status}</span>'
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(f"📧 **Email**: {matched_candidate['email']}")
+                    st.write(f"📞 **Phone**: {matched_candidate['phone']}")
+                    st.write(f"💼 **Role**: {matched_candidate['job_role']}")
+                with col2:
+                    st.write(f"⏳ **Experience Level**: {matched_candidate['experience']}")
+                    st.markdown(f"📌 **Pipeline Status**: {status_badge_html}", unsafe_allow_html=True)
+                    st.write(f"📊 **MCQ Score**: `{matched_candidate['mcq_score']}`")
+                
+                st.write("---")
+                
+                st.write("#### 🎯 Skill Mapping & Gap Analysis")
+                col_sk1, col_sk2 = st.columns(2)
+                with col_sk1:
+                    matched_skills = matched_candidate.get("matched_skills", [])
+                    if matched_skills:
+                        st.write("✅ **Matched Skills (Present in Resume):**")
+                        tags_html = "".join([f'<span style="background-color: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; margin-right: 8px; display: inline-block; margin-bottom: 5px; font-weight: 500;">{skill}</span>' for skill in matched_skills])
+                        st.markdown(tags_html, unsafe_allow_html=True)
+                    else:
+                        st.write("✅ **Matched Skills:** None identified.")
+                with col_sk2:
+                    missing_skills = matched_candidate.get("missing_skills", [])
+                    if missing_skills:
+                        st.write("⚠️ **Missing Skills (Required for JD):**")
+                        tags_html = "".join([f'<span style="background-color: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; margin-right: 8px; display: inline-block; margin-bottom: 5px; font-weight: 500;">{skill}</span>' for skill in missing_skills])
+                        st.markdown(tags_html, unsafe_allow_html=True)
+                    else:
+                        st.write("⚠️ **Missing Skills:** None identified.")
+                
+                red_flags = matched_candidate.get("red_flags", [])
+                has_red_flags = False
+                if red_flags:
+                    if isinstance(red_flags, list):
+                        has_red_flags = any(x.lower() not in ["none", ""] for x in red_flags)
+                    else:
+                        has_red_flags = red_flags.lower() not in ["none", ""]
+                        
+                if has_red_flags:
+                    st.write("🚩 **Red Flags / Hiring Concerns:**")
+                    if isinstance(red_flags, list):
+                        for flag in red_flags:
+                            if flag.lower() not in ["none", ""]:
+                                st.markdown(f"- <span style='color: #ef4444; font-weight: 500;'>{flag}</span>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"- <span style='color: #ef4444; font-weight: 500;'>{red_flags}</span>", unsafe_allow_html=True)
+                
+                st.write("---")
+                if matched_candidate.get("screening_reason"):
+                    st.markdown("**Initial Screening Feedback:**")
+                    st.info(matched_candidate["screening_reason"])
+                
+                if matched_candidate.get("summary"):
+                    st.markdown("**Hiring Committee Summary:**")
+                    st.success(matched_candidate["summary"])
+                    
+            with score_tab2:
+                st.write("#### 💬 Technical Interview Dialogue Logs")
+                chat_hist = matched_candidate.get("chat_history", [])
+                if not chat_hist:
+                    st.info("No conversational interview logs are available for this candidate yet.")
+                else:
+                    chat_log_html = '<div class="chat-bubble-container">'
+                    for message in chat_hist:
+                        formatted_content = format_chat_text(message["content"])
+                        if message["role"] == "user":
+                            chat_log_html += f"""
+                            <div class="chat-bubble chat-bubble-user" style="align-self: flex-end; margin-bottom: 10px;">
+                                <span class="chat-avatar">🧑</span> <strong>Candidate:</strong> {formatted_content}
+                            </div>
+                            """
+                        else:
+                            chat_log_html += f"""
+                            <div class="chat-bubble chat-bubble-assistant" style="align-self: flex-start; margin-bottom: 10px;">
+                                <span class="chat-avatar chat-avatar-ai">🤖</span> <strong>Interviewer:</strong> {formatted_content}
+                            </div>
+                            """
+                    chat_log_html += '</div>'
+                    st.markdown(chat_log_html, unsafe_allow_html=True)
+                    
+            with score_tab3:
+                st.write("#### ⚙️ Administrative Controls & Reset Actions")
+                col_adm1, col_adm2 = st.columns(2)
+                with col_adm1:
+                    st.write("**Assessment Access**")
+                    allowed_retake = matched_candidate.get("allowed_retake", False)
+                    if allowed_retake:
+                        st.success("Retake has already been enabled for this candidate.")
+                    else:
+                        if st.button("🔓 Enable Retake / Reset Access", key=f"reset_btn_{matched_candidate['email']}", use_container_width=True):
+                            records = load_candidates()
+                            for r in records:
+                                if r.get("email", "").strip().lower() == matched_candidate["email"].strip().lower():
+                                    r["allowed_retake"] = True
+                                    r["status"] = "Retake Allowed"
+                                    break
+                            with open(CANDIDATES_FILE, "w") as f:
+                                json.dump(records, f, indent=2)
+                            st.success(f"Access reset successful! {matched_candidate['name']} can now register and retake the test.")
+                            time.sleep(1)
+                            st.rerun()
+                            
+                with col_adm2:
+                    st.write("**Danger Zone**")
+                    st.warning("Deletions are permanent.")
+                    if st.button("🗑️ Delete Candidate Record", key=f"delete_btn_{matched_candidate['email']}", use_container_width=True):
+                        records = load_candidates()
+                        filtered_records = [r for r in records if r.get("email", "").strip().lower() != matched_candidate["email"].strip().lower()]
+                        with open(CANDIDATES_FILE, "w") as f:
+                            json.dump(filtered_records, f, indent=2)
+                        try:
+                            tickets = load_issues()
+                            filtered_tickets = [t for t in tickets if t.get("email", "").strip().lower() != matched_candidate["email"].strip().lower()]
+                            save_issues(filtered_tickets)
+                        except Exception:
+                            pass
+                            
+                        st.success(f"Candidate {matched_candidate['name']} successfully deleted!")
+                        time.sleep(1)
+                        st.rerun()
+
+
+@st.fragment
+def render_mcq_stage():
+    st.markdown("""
+    <div class="glass-card" style="margin-bottom: 20px;">
+        <div class="stage-title">Stage 2: Technical MCQ Screening</div>
+        <div style="color: #64748b; font-size: 0.95rem;">Answer the following questions based on technical competencies. Passing threshold is 60% (3 out of 5 correct).</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Render MCQ form
+    temp_answers = {}
+    for idx, q in enumerate(st.session_state.mcqs):
+        st.markdown(f"**Question {idx + 1}:** {q.question}")
+        options = ["Select an option"] + q.options
+        user_choice = st.radio(
+            label=f"Options for Q{idx+1}",
+            options=options,
+            key=f"mcq_q_{idx}",
+            label_visibility="collapsed"
+        )
+        if user_choice != "Select an option":
+            temp_answers[idx] = user_choice
+            
+    if st.button("Submit MCQ Test"):
+        if len(temp_answers) < len(st.session_state.mcqs):
+            st.error("Please answer all multiple-choice questions before submitting.")
+        else:
+            score, pct, results = MCQAgent.grade_answers(st.session_state.mcqs, temp_answers)
+            st.session_state.mcq_score = score
+            st.session_state.mcq_passed = score >= 3
+            st.session_state.mcq_answers = temp_answers
+            
+            if st.session_state.mcq_passed:
+                st.session_state.stage = "mcq_passed_screen"
+            else:
+                st.session_state.stage = "mcq_failed_screen"
+            log_candidate_state()
+            st.rerun()
+
+
+@st.fragment
+def render_interview_stage():
+    user_response_text = ""
+    if not st.session_state.interview_concluded:
+        input_method = st.radio("Input Method", ["⌨️ Type response", "🎙️ Record Voice response"], horizontal=True, key="interview_input_method")
+        
+        if input_method == "⌨️ Type response":
+            with st.form("chat_form", clear_on_submit=True):
+                user_input = st.text_area("Your Response", placeholder="Type your answer here and click Send...")
+                submitted = st.form_submit_button("Send Answer")
+            if submitted and user_input.strip():
+                user_response_text = user_input.strip()
+        else:
+            st.markdown('<div><span class="recording-indicator"></span><strong>Microphone Ready</strong> - speak clearly and submit.</div>', unsafe_allow_html=True)
+            st.info("🎙️ **Voice Instructions**: Click the microphone icon below to start recording. Speak your answer clearly, and click the stop icon when you are finished. Then click **Submit Answer**.")
+            audio_file = st.audio_input("Record your answer", key="interview_audio_record")
+            if audio_file:
+                st.audio(audio_file)
+                if st.button("Submit Answer"):
+                    with st.spinner("Transcribing your audio..."):
+                        try:
+                            config = Config.load_config()
+                            from google import genai
+                            from google.genai import types
+                            
+                            client = genai.Client(api_key=config.GEMINI_API_KEY)
+                            audio_bytes = audio_file.read()
+                            
+                            response = client.models.generate_content(
+                                model='gemini-2.5-flash',
+                                contents=[
+                                    types.Part.from_bytes(
+                                        data=audio_bytes,
+                                        mime_type=audio_file.type
+                                    ),
+                                    "Transcribe the spoken technical words in this audio into text accurately. Do not add any conversational framing or headers, just return the text transcription."
+                                ]
+                            )
+                            transcription = response.text.strip() if response.text else ""
+                            if transcription:
+                                user_response_text = transcription
+                            else:
+                                st.error("No speech detected. Please record again.")
+                        except Exception as e:
+                            st.error(f"Voice transcription failed: {str(e)}")
+
+        if user_response_text:
+            st.session_state.chat_history.append({"role": "user", "content": user_response_text})
+            
+            with st.spinner("Interviewer is reviewing your answer..."):
+                try:
+                    last_assistant_msg = ""
+                    for msg in reversed(st.session_state.chat_history[:-1]):
+                        if msg["role"] == "assistant":
+                            last_assistant_msg = msg["content"]
+                            break
+                            
+                    repeat_agent = RepeatAgent()
+                    clarification = repeat_agent.run(
+                        candidate_message=user_response_text,
+                        last_question=last_assistant_msg
+                    )
+                    
+                    if clarification.is_clarification_request:
+                        st.session_state.chat_history.append({
+                            "role": "assistant",
+                            "content": clarification.clarified_response
+                        })
+                    else:
+                        interview_agent = InterviewAgent()
+                        job_diff = JOB_DIFFICULTIES.get(st.session_state.job_role, "Medium")
+                        res = interview_agent.run(
+                            resume_text=st.session_state.resume_text,
+                            job_role=st.session_state.job_role,
+                            experience=st.session_state.experience,
+                            job_description=st.session_state.job_description,
+                            conversation_history=st.session_state.chat_history,
+                            difficulty=job_diff,
+                            num_questions=3
+                        )
+                        st.session_state.chat_history.append({"role": "assistant", "content": res.response})
+                        if res.should_conclude:
+                            st.session_state.interview_concluded = True
+                except Exception as e:
+                    st.error(f"Error during interview conversation: {str(e)}")
+
+    # Display Chat Bubbles
+    chat_html = '<div class="chat-bubble-container">'
+    for message in st.session_state.chat_history:
+        formatted_content = format_chat_text(message["content"])
+        if message["role"] == "user":
+            chat_html += f"""
+            <div class="chat-bubble chat-bubble-user" style="align-self: flex-end; margin-bottom: 10px;">
+                <span class="chat-avatar">🧑</span> {formatted_content}
+            </div>
+            """
+        else:
+            chat_html += f"""
+            <div class="chat-bubble chat-bubble-assistant" style="align-self: flex-start; margin-bottom: 10px;">
+                <span class="chat-avatar chat-avatar-ai">🤖</span> {formatted_content}
+            </div>
+            """
+    chat_html += '</div>'
+    st.markdown(chat_html, unsafe_allow_html=True)
+
+    if st.session_state.chat_history and st.session_state.chat_history[-1]["role"] == "assistant":
+        col_rep1, col_rep2 = st.columns([3, 7])
+        with col_rep1:
+            if st.button("🔊 Replay Question", use_container_width=True):
+                st.session_state.last_spoken_message = ""
+                
+    if st.session_state.interview_concluded:
+        st.success("The interview session is complete! Clicking below will trigger the evaluation phase.")
+        if st.button("Get Selection Results", use_container_width=True):
+            with st.spinner("Hiring Committee Agent is evaluating..."):
+                try:
+                    interview_agent = InterviewAgent()
+                    eval_res = interview_agent.evaluate(
+                        resume_text=st.session_state.resume_text,
+                        job_role=st.session_state.job_role,
+                        experience=st.session_state.experience,
+                        job_description=st.session_state.job_description,
+                        conversation_history=st.session_state.chat_history
+                    )
+                    st.session_state.evaluation_result = eval_res
+                    st.session_state.stage = "final_evaluation"
+                    log_candidate_state()
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error during final evaluation: {str(e)}")
+
+    # Speech synthesis trigger
+    if "last_spoken_message" not in st.session_state:
+        st.session_state.last_spoken_message = ""
+        
+    if st.session_state.chat_history and st.session_state.chat_history[-1]["role"] == "assistant":
+        last_msg = st.session_state.chat_history[-1]["content"]
+        if st.session_state.last_spoken_message != last_msg:
+            clean_msg = last_msg.replace('**', '').replace('*', '').replace('`', '').replace('"', '\\"').replace('\n', ' ')
+            st.components.v1.html(f"""
+            <script>
+                if ('speechSynthesis' in window) {{
+                    window.parent.speechSynthesis.cancel();
+                    var utterance = new SpeechSynthesisUtterance("{clean_msg}");
+                    utterance.rate = 1.05;
+                    var voices = window.parent.speechSynthesis.getVoices();
+                    var engVoice = voices.find(v => v.lang.startsWith('en'));
+                    if (engVoice) utterance.voice = engVoice;
+                    window.parent.speechSynthesis.speak(utterance);
+                }}
+            </script>
+            """, height=0)
+            st.session_state.last_spoken_message = last_msg
+
+@st.fragment
+def render_job_management_tab():
+    # Initialize chatbot history for job agent if not present
+    if "job_agent_history" not in st.session_state:
+        st.session_state.job_agent_history = [
+            {"role": "assistant", "content": "Hello! I am your AI Job Management assistant. Tell me how I can help manage your postings (e.g. create a new role, modify requirements, or delete active jobs)."}
+        ]
+
+    # Load active jobs from JSON
+    jobs = load_jobs()
+
+    # Split panel: Left panel shows active jobs grid, Right panel shows chat with AI agent
+    col_left, col_right = st.columns([1.2, 1])
+
+    with col_left:
+        st.write("### 💼 Current Active Roles")
+        if jobs:
+            # Show active jobs in a clean, vertical grid
+            cols = st.columns(2)
+            for idx, (title, data) in enumerate(jobs.items()):
+                col = cols[idx % 2]
+                desc = data.get("description", data) if isinstance(data, dict) else data
+                diff = data.get("difficulty", "Medium") if isinstance(data, dict) else "Medium"
+                
+                # Colors based on difficulty level
+                diff_color = "#3b82f6"
+                if diff == "Hard":
+                    diff_color = "#ef4444"
+                elif diff == "Easy" or diff == "Very Easy":
+                    diff_color = "#10b981"
+                
+                with col:
+                    st.markdown(f"""
+                    <div class="job-card" style="min-height: 250px; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-weight: 700; font-size: 1.1rem; color: var(--text-main);">{title}</span>
+                                <span style="background-color: {diff_color}1a; color: {diff_color}; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; border: 1px solid {diff_color}33;">{diff}</span>
+                            </div>
+                            <div style="font-size: 0.88rem; color: var(--text-sub); line-height: 1.5; white-space: pre-wrap; max-height: 140px; overflow-y: auto; padding-top: 5px; border-top: 1px solid var(--card-border);">
+                                {desc}
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
+        else:
+            st.info("No active jobs currently listed.")
+
+    with col_right:
+        st.write("### 🤖 AI Job Management Assistant")
+        st.markdown("""
+        <div style="background-color: rgba(229, 9, 20, 0.04); border: 1px solid rgba(229, 9, 20, 0.1); border-radius: 10px; padding: 12px; font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;">
+            💬 <strong>Tip:</strong> You can type commands like:<br>
+            • <em>"Create a DevOps role with Docker and AWS"</em><br>
+            • <em>"Add Python to requirements for Machine Learning Engineer"</em><br>
+            • <em>"Delete the Data Scientist position"</em>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Chat display container
+        chat_container = st.container(height=350)
+        with chat_container:
+            for msg in st.session_state.job_agent_history:
+                with st.chat_message(msg["role"]):
+                    st.markdown(msg["content"])
+
+        # Capture prompt
+        agent_input = st.chat_input("Tell the AI to manage jobs...", key="job_agent_chat_input")
+        if agent_input:
+            # Append user message
+            st.session_state.job_agent_history.append({"role": "user", "content": agent_input})
+            
+            with st.spinner("AI is processing job management instruction..."):
+                try:
+                    # Run JobAgent
+                    job_agent = JobAgent()
+                    result = job_agent.run(agent_input, jobs)
+                    
+                    action_taken = result.action.strip().lower()
+                    job_title = result.job_title.strip()
+                    explanation = result.explanation
+                    
+                    if action_taken == "add":
+                        if job_title in jobs:
+                            explanation = f"⚠️ The job role '{job_title}' already exists. I cannot add it. Use an update instruction if you want to modify it."
+                        elif not result.job_description:
+                            explanation = f"⚠️ The agent tried to add '{job_title}' but did not generate a job description. Please provide more details."
+                        else:
+                            jobs[job_title] = {
+                                "description": result.job_description,
+                                "difficulty": result.difficulty
+                            }
+                            save_jobs(jobs)
+                    elif action_taken == "update":
+                        if job_title not in jobs:
+                            explanation = f"⚠️ The job role '{job_title}' does not exist, so I couldn't update it. Use an 'add' instruction if you want to create a new role."
+                        elif not result.job_description:
+                            explanation = f"⚠️ The agent tried to update '{job_title}' but the description was empty."
+                        else:
+                            jobs[job_title] = {
+                                "description": result.job_description,
+                                "difficulty": result.difficulty
+                            }
+                            save_jobs(jobs)
+                    elif action_taken == "delete":
+                        if job_title not in jobs:
+                            explanation = f"⚠️ The job role '{job_title}' does not exist, so I couldn't delete it."
+                        else:
+                            del jobs[job_title]
+                            save_jobs(jobs)
+                    
+                    st.session_state.job_agent_history.append({"role": "assistant", "content": explanation})
+                except Exception as e:
+                    st.session_state.job_agent_history.append({"role": "assistant", "content": f"⚠️ Error running job agent: {str(e)}"})
+            st.rerun()
+
+    st.markdown("---")
+    with st.expander("🛠️ Manual Job Controls (Fallback / Form-based)"):
+        action = st.selectbox("Action", ["Add New Job", "Update Job Description", "Delete Job"], key="manual_action_select")
+        
+        if action == "Add New Job":
+            st.write("### Create a New Job Opening")
+            new_title = st.text_input("Job Title", placeholder="e.g. DevOps Engineer", key="manual_add_title")
+            
+            brief_notes = st.text_input("AI Assistant Input (Brief skills/notes)", placeholder="e.g. React, TypeScript, 3 years exp, state management, hybrid", key="manual_add_notes")
+            if st.button("🪄 Auto-Generate JD with AI", key="manual_add_autogen"):
+                if not new_title.strip():
+                    st.error("Please enter a Job Title first.")
+                elif not brief_notes.strip():
+                    st.error("Please enter brief notes or skills for the AI to work with.")
+                else:
+                    with st.spinner("Gemini is drafting the job description..."):
+                        draft = generate_ai_jd(new_title.strip(), brief_notes.strip())
+                        st.session_state.generated_jd_draft = draft
+                        st.rerun()
+            
+            default_jd = st.session_state.get("generated_jd_draft", "")
+            new_jd = st.text_area("Job Description Details", value=default_jd, height=200, placeholder="Paste or edit the job requirements here...", key="manual_add_jd")
+            new_diff = st.selectbox("Select Target Difficulty Level", ["Very Easy", "Easy", "Medium", "Hard"], index=2, key="manual_add_diff")
+            
+            if st.button("Create Job Opening", key="manual_add_submit"):
+                if not new_title.strip() or not new_jd.strip():
+                    st.error("Please fill in both the Job Title and Job Description.")
+                elif new_title.strip() in jobs:
+                    st.error(f"Job title '{new_title.strip()}' already exists.")
+                else:
+                    jobs[new_title.strip()] = {
+                        "description": new_jd.strip(),
+                        "difficulty": new_diff
+                    }
+                    if save_jobs(jobs):
+                        if "generated_jd_draft" in st.session_state:
+                            del st.session_state.generated_jd_draft
+                        st.success(f"Job opening '{new_title}' successfully created!")
+                        time.sleep(1)
+                        st.rerun()
+                        
+        elif action == "Update Job Description":
+            st.write("### Edit an Existing Job Opening")
+            if not jobs:
+                st.info("No active jobs to update.")
+            else:
+                selected_job = st.selectbox("Select Job to Edit", list(jobs.keys()), key="manual_edit_select")
+                
+                brief_notes = st.text_input("AI Assistant Input (Optional brief skills to rewrite)", placeholder="e.g. Add AWS and Kubernetes requirement", key="manual_edit_notes")
+                if st.button("🪄 Auto-Regenerate JD with AI", key="manual_edit_autogen"):
+                    if not brief_notes.strip():
+                        st.error("Please enter brief notes or skills to regenerate.")
+                    else:
+                        with st.spinner("Gemini is regenerating the job description..."):
+                            draft = generate_ai_jd(selected_job, brief_notes.strip())
+                            st.session_state.generated_jd_draft = draft
+                            st.rerun()
+                            
+                selected_job_data = jobs[selected_job]
+                current_jd = selected_job_data.get("description", selected_job_data) if isinstance(selected_job_data, dict) else selected_job_data
+                current_diff = selected_job_data.get("difficulty", "Medium") if isinstance(selected_job_data, dict) else "Medium"
+                
+                default_jd = st.session_state.get("generated_jd_draft", current_jd)
+                updated_jd = st.text_area("Job Description", value=default_jd, height=200, key="manual_edit_jd")
+                
+                diff_options = ["Very Easy", "Easy", "Medium", "Hard"]
+                default_diff_idx = diff_options.index(current_diff) if current_diff in diff_options else 2
+                updated_diff = st.selectbox("Edit Difficulty Level", diff_options, index=default_diff_idx, key="manual_edit_diff")
+                
+                if st.button("Save Changes", key="manual_edit_submit"):
+                    jobs[selected_job] = {
+                        "description": updated_jd,
+                        "difficulty": updated_diff
+                    }
+                    if save_jobs(jobs):
+                        if "generated_jd_draft" in st.session_state:
+                            del st.session_state.generated_jd_draft
+                        st.success(f"Job opening '{selected_job}' successfully updated!")
+                        time.sleep(1)
+                        st.rerun()
+                        
+        elif action == "Delete Job":
+            st.write("### Delete a Job Opening")
+            if not jobs:
+                st.info("No active jobs to delete.")
+            else:
+                selected_job = st.selectbox("Select Job to Delete", list(jobs.keys()), key="manual_delete_select")
+                st.warning(f"Are you sure you want to permanently delete the '{selected_job}' position?")
+                if st.button("Confirm Delete", key="manual_delete_submit"):
+                    if selected_job in jobs:
+                        del jobs[selected_job]
+                        if save_jobs(jobs):
+                            st.success(f"Job opening '{selected_job}' successfully deleted!")
+                            time.sleep(1)
+                            st.rerun()
 
 JOBS_FILE = "src/jobs.json"
 
@@ -812,6 +1685,7 @@ def log_candidate_state(status_override=None):
         "mcq_score": f"{mcq_score}/5" if stage in ["mcq", "mcq_passed_screen", "mcq_failed_screen", "interview", "final_evaluation"] else "N/A",
         "selection": selection_rec,
         "summary": eval_summary,
+        "chat_history": st.session_state.get("chat_history", []),
         "timestamp": timestamp
     }
     
@@ -917,6 +1791,11 @@ if "sidebar_chat_history" not in st.session_state:
         {"role": "assistant", "content": "Hello! I am your Recruitment Assistant. Ask me about available job roles, requirements, or what profiles we look for."}
     ]
 
+if "active_scorecard_candidate" not in st.session_state:
+    st.session_state.active_scorecard_candidate = ""
+if "recruiter_logged_in" not in st.session_state:
+    st.session_state.recruiter_logged_in = False
+
 if "last_stage" not in st.session_state:
     st.session_state.last_stage = "upload"
 
@@ -940,77 +1819,13 @@ st.markdown('<div class="recruit-header">AgentFlow Interview Platform</div>', un
 st.markdown('<div class="recruit-sub">AI-Powered Multi-Agent Screening and Evaluation</div>', unsafe_allow_html=True)
 
 # ----------------- SIDEBAR HR CHATBOT -----------------
-st.sidebar.markdown("### 🤖 Recruitment Assistant")
-st.sidebar.write("Ask about open roles and job requirements:")
-
-# Render chatbot transcript in sidebar
-for msg in st.session_state.sidebar_chat_history:
-    with st.sidebar.chat_message(msg["role"]):
-        st.write(msg["content"])
-
-# Capture query input
-sidebar_input = st.sidebar.chat_input("Ask about roles...")
-if sidebar_input:
-    # Append and show user message immediately
-    st.session_state.sidebar_chat_history.append({"role": "user", "content": sidebar_input})
-    with st.sidebar.chat_message("user"):
-        st.write(sidebar_input)
-        
-    # Generate bot response via Gemini
-    with st.sidebar.chat_message("assistant"):
-        with st.spinner("Reviewing roles..."):
-            try:
-                # Load configuration and initialize inline chain
-                config = Config.load_config()
-                from langchain_google_genai import ChatGoogleGenerativeAI
-                from langchain_core.prompts import ChatPromptTemplate
-                
-                chat_model = ChatGoogleGenerativeAI(
-                    model="gemini-2.5-flash",
-                    google_api_key=config.GEMINI_API_KEY,
-                    temperature=0.3
-                )
-                
-                # Format JD details
-                jds_text = ""
-                for role, jd in PREDEFINED_JDS.items():
-                    if role != "Custom / Write your own":
-                        jds_text += f"- Job Role: {role}\n  Description: {jd}\n\n"
-                        
-                system_prompt = f"""You are a helpful, friendly HR chatbot assistant for our recruitment platform.
-Your job is to answer user queries about open roles, available positions, job requirements, and technical expectations.
-
-Here is the list of open positions and their details:
-{jds_text}
-
-Rules:
-1. Only provide answers based on the open roles listed above.
-2. If they ask if a specific role is available, confirm if it is in the list.
-3. If they ask about a role that is NOT in the list, politely inform them it's currently not listed, but they can select 'Custom / Write your own' in the Candidate Assessment tab to evaluate their custom profile.
-4. Keep your responses short, helpful, and professional (max 2-3 sentences).
-"""
-                history_str = ""
-                for m in st.session_state.sidebar_chat_history[:-1]:
-                    role_name = "Assistant" if m["role"] == "assistant" else "User"
-                    history_str += f"{role_name}: {m['content']}\n"
-                
-                prompt_tpl = ChatPromptTemplate.from_messages([
-                    ("system", system_prompt),
-                    ("human", "Conversation History:\n{history}\n\nUser Question: {input_text}")
-                ])
-                
-                chain = prompt_tpl | chat_model
-                response = chain.invoke({
-                    "history": history_str,
-                    "input_text": sidebar_input
-                })
-                
-                bot_text = response.content
-                st.write(bot_text)
-                st.session_state.sidebar_chat_history.append({"role": "assistant", "content": bot_text})
-                st.rerun()
-            except Exception as e:
-                st.write(f"Assistant error: {str(e)}")
+with st.sidebar:
+    render_sidebar_chatbot()
+    if st.session_state.get("recruiter_logged_in", False):
+        st.markdown("---")
+        if st.button("🔒 Recruiter Logout", key="sidebar_logout_btn", use_container_width=True):
+            st.session_state.recruiter_logged_in = False
+            st.rerun()
 
 # ----------------- PAGE NAVIGATION -----------------
 if "current_page" not in st.session_state:
@@ -1079,11 +1894,46 @@ if page == "📋 Open Positions":
     st.stop()
 
 elif page == "🔒 Recruiter Portal":
-    st.markdown("""
-    <div class="glass-card">
-        <div class="stage-title">🔒 Recruiter Portal</div>
-    </div>
-    """, unsafe_allow_html=True)
+    # Recruiter secure credentials check
+    if not st.session_state.get("recruiter_logged_in", False):
+        st.markdown("""
+        <div class="glass-card" style="max-width: 450px; margin: 40px auto; text-align: center; border-top: 4px solid var(--accent-red);">
+            <div style="font-size: 2.5rem; margin-bottom: 10px;">🔒</div>
+            <h3 style="color: var(--text-main); margin-top: 0; font-weight: 700;">Recruiter Secure Login</h3>
+            <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px;">Please authenticate to access candidate details and analytics.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        with st.form("recruiter_login_form"):
+            password_input = st.text_input("Enter Recruiter Access Password", type="password")
+            login_submitted = st.form_submit_button("Authenticate Access", use_container_width=True)
+            
+            if login_submitted:
+                expected_password = os.getenv("RECRUITER_PASSWORD", "admin123")
+                if password_input == expected_password:
+                    st.session_state.recruiter_logged_in = True
+                    st.success("Authentication successful!")
+                    time.sleep(0.5)
+                    st.rerun()
+                else:
+                    st.error("Invalid password. Please contact your administrator.")
+        st.stop()
+
+    # If logged in, display the logout button in sidebar and on the page header
+    col_title, col_logout = st.columns([3, 1])
+    with col_title:
+        st.markdown("""
+        <div class="glass-card" style="margin-bottom: 0px; padding: 15px 20px !important;">
+            <div class="stage-title" style="margin: 0;">🔒 Recruiter Portal</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_logout:
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        if st.button("🚪 Log Out", key="recruiter_main_logout_btn", use_container_width=True):
+            st.session_state.recruiter_logged_in = False
+            st.rerun()
+    
+    st.write("")
     
     st.write("Hello Recruiter! Welcome to your administrative control center.")
     
@@ -1108,16 +1958,25 @@ elif page == "🔒 Recruiter Portal":
         metrics_html = f"""
         <div class="metrics-grid">
             <div class="metric-card">
-                <span class="metric-label">Total Applicants</span>
-                <h3 class="metric-val">{total_cand}</h3>
+                <div class="metric-icon-wrapper">👥</div>
+                <div class="metric-text-wrapper">
+                    <span class="metric-label">Total Applicants</span>
+                    <h3 class="metric-val">{total_cand}</h3>
+                </div>
             </div>
             <div class="metric-card">
-                <span class="metric-label">AI Selection Rate</span>
-                <h3 class="metric-val">{sel_rate}%</h3>
+                <div class="metric-icon-wrapper">🏆</div>
+                <div class="metric-text-wrapper">
+                    <span class="metric-label">AI Selection Rate</span>
+                    <h3 class="metric-val">{sel_rate}%</h3>
+                </div>
             </div>
             <div class="metric-card">
-                <span class="metric-label">Pending Help Tickets</span>
-                <h3 class="metric-val" style="background: { 'linear-gradient(135deg, #ef4444, #dc2626)' if pending_tick > 0 else 'linear-gradient(135deg, #10b981, #059669)' }; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{pending_tick}</h3>
+                <div class="metric-icon-wrapper">⚠️</div>
+                <div class="metric-text-wrapper">
+                    <span class="metric-label">Pending Help Tickets</span>
+                    <h3 class="metric-val" style="background: { 'linear-gradient(135deg, #ef4444, #dc2626)' if pending_tick > 0 else 'linear-gradient(135deg, #10b981, #059669)' }; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{pending_tick}</h3>
+                </div>
             </div>
         </div>
         """
@@ -1131,296 +1990,11 @@ elif page == "🔒 Recruiter Portal":
     portal_tab1, portal_tab2, portal_tab3 = st.tabs(["💼 Job Management & AI Assistant", "🧑 Candidate Assessments Hub", "⚠️ Support & Help Requests"])
     
     with portal_tab1:
-        st.subheader("Current Active Roles")
-        jobs = load_jobs()
-        if jobs:
-            for title, data in jobs.items():
-                desc = data.get("description", data) if isinstance(data, dict) else data
-                diff = data.get("difficulty", "Medium") if isinstance(data, dict) else "Medium"
-                with st.expander(f"{title} (Difficulty: {diff})"):
-                    st.write(desc)
-        else:
-            st.info("No active jobs currently listed.")
-            
-        st.markdown("---")
-        
-        action = st.selectbox("Action", ["Add New Job", "Update Job Description", "Delete Job"])
-        
-        if action == "Add New Job":
-            st.write("### Create a New Job Opening")
-            new_title = st.text_input("Job Title", placeholder="e.g. DevOps Engineer")
-            
-            brief_notes = st.text_input("AI Assistant Input (Brief skills/notes)", placeholder="e.g. React, TypeScript, 3 years exp, state management, hybrid")
-            if st.button("🪄 Auto-Generate JD with AI"):
-                if not new_title.strip():
-                    st.error("Please enter a Job Title first.")
-                elif not brief_notes.strip():
-                    st.error("Please enter brief notes or skills for the AI to work with.")
-                else:
-                    with st.spinner("Gemini is drafting the job description..."):
-                        draft = generate_ai_jd(new_title.strip(), brief_notes.strip())
-                        st.session_state.generated_jd_draft = draft
-                        st.rerun()
-            
-            default_jd = st.session_state.get("generated_jd_draft", "")
-            new_jd = st.text_area("Job Description Details", value=default_jd, height=200, placeholder="Paste or edit the job requirements here...")
-            new_diff = st.selectbox("Select Target Difficulty Level", ["Very Easy", "Easy", "Medium", "Hard"], index=2)
-            
-            if st.button("Create Job Opening"):
-                if not new_title.strip() or not new_jd.strip():
-                    st.error("Please fill in both the Job Title and Job Description.")
-                elif new_title.strip() in jobs:
-                    st.error(f"Job title '{new_title.strip()}' already exists.")
-                else:
-                    jobs[new_title.strip()] = {
-                        "description": new_jd.strip(),
-                        "difficulty": new_diff
-                    }
-                    if save_jobs(jobs):
-                        if "generated_jd_draft" in st.session_state:
-                            del st.session_state.generated_jd_draft
-                        st.success(f"Job opening '{new_title}' successfully created!")
-                        time.sleep(1)
-                        st.rerun()
+        render_job_management_tab()
                         
-        elif action == "Update Job Description":
-            st.write("### Edit an Existing Job Opening")
-            if not jobs:
-                st.info("No active jobs to update.")
-            else:
-                selected_job = st.selectbox("Select Job to Edit", list(jobs.keys()))
-                
-                brief_notes = st.text_input("AI Assistant Input (Optional brief skills to rewrite)", placeholder="e.g. Add AWS and Kubernetes requirement")
-                if st.button("🪄 Auto-Regenerate JD with AI"):
-                    if not brief_notes.strip():
-                        st.error("Please enter brief notes or skills to regenerate.")
-                    else:
-                        with st.spinner("Gemini is regenerating the job description..."):
-                            draft = generate_ai_jd(selected_job, brief_notes.strip())
-                            st.session_state.generated_jd_draft = draft
-                            st.rerun()
-                            
-                selected_job_data = jobs[selected_job]
-                current_jd = selected_job_data.get("description", selected_job_data) if isinstance(selected_job_data, dict) else selected_job_data
-                current_diff = selected_job_data.get("difficulty", "Medium") if isinstance(selected_job_data, dict) else "Medium"
-                
-                default_jd = st.session_state.get("generated_jd_draft", current_jd)
-                updated_jd = st.text_area("Job Description", value=default_jd, height=200)
-                
-                diff_options = ["Very Easy", "Easy", "Medium", "Hard"]
-                default_diff_idx = diff_options.index(current_diff) if current_diff in diff_options else 2
-                updated_diff = st.selectbox("Edit Difficulty Level", diff_options, index=default_diff_idx)
-                
-                if st.button("Save Changes"):
-                    jobs[selected_job] = {
-                        "description": updated_jd,
-                        "difficulty": updated_diff
-                    }
-                    if save_jobs(jobs):
-                        if "generated_jd_draft" in st.session_state:
-                            del st.session_state.generated_jd_draft
-                        st.success(f"Job opening '{selected_job}' successfully updated!")
-                        time.sleep(1)
-                        st.rerun()
-                        
-        elif action == "Delete Job":
-            st.write("### Delete a Job Opening")
-            if not jobs:
-                st.info("No active jobs to delete.")
-            else:
-                selected_job = st.selectbox("Select Job to Delete", list(jobs.keys()))
-                st.warning(f"Are you sure you want to permanently delete the '{selected_job}' position?")
-                if st.button("Confirm Delete"):
-                    del jobs[selected_job]
-                    if save_jobs(jobs):
-                        st.success(f"Job opening '{selected_job}' successfully deleted!")
-                        time.sleep(1)
-                        st.rerun()
-                        
-
     with portal_tab2:
         st.subheader("Recruiter Analytics & Leaderboard")
-        candidates = load_candidates()
-        
-        if not candidates:
-            st.info("No candidates have started or completed the test yet.")
-        else:
-            import pandas as pd
-            df_candidates = pd.DataFrame(candidates)
-            
-            # Sort candidates by match_score descending if it exists
-            if "match_score" in df_candidates.columns:
-                df_candidates = df_candidates.sort_values(by="match_score", ascending=False)
-            
-            st.write("Ranked by AI Resume Match Score:")
-            display_cols = ["name", "email", "job_role", "match_score", "mcq_score", "selection", "status"]
-            # Ensure all columns exist
-            for col in display_cols:
-                if col not in df_candidates.columns:
-                    df_candidates[col] = "N/A"
-            df_display = df_candidates[display_cols]
-            df_display.columns = ["Name", "Email", "Applied Role", "Match Score (%)", "MCQ Score", "Selection Recommendation", "Pipeline Stage"]
-            
-            st.dataframe(df_display, use_container_width=True)
-            
-            st.markdown("---")
-            st.subheader("Detailed Evaluation & Skill Gap Analysis")
-            
-            # Live search filter bar
-            search_query = st.text_input("🔍 Live Candidate Search & Filter", "", placeholder="Search by name, email, or job role...", key="candidate_search_input")
-            
-            # Filter candidates list
-            filtered_cands = candidates
-            if search_query.strip():
-                q = search_query.strip().lower()
-                filtered_cands = [c for c in candidates if q in c.get("name", "").lower() or q in c.get("email", "").lower() or q in c.get("job_role", "").lower()]
-            
-            if not filtered_cands:
-                st.warning("No candidates match your search query.")
-                matched_candidate = None
-            else:
-                options = [f"{c['name']} ({c['email']}) - {c['job_role']}" for c in filtered_cands]
-                selected_cand = st.selectbox("Select Candidate to view detailed scorecard", options, key="candidate_scorecard_select")
-                
-                matched_candidate = None
-                for c in filtered_cands:
-                    if f"{c['name']} ({c['email']}) - {c['job_role']}" == selected_cand:
-                        matched_candidate = c
-                        break
-            
-            if matched_candidate:
-                with st.container(border=True):
-                    st.markdown(f"### Scorecard: {matched_candidate['name']}")
-                
-                    # AI Hiring Committee Recommendation Banner
-                    recommendation = matched_candidate.get("selection", "N/A")
-                    rec_badge_html = ""
-                    if "Recommended" in recommendation or "hire" in recommendation.lower():
-                        rec_badge_html = f'<div style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 15px 20px; display: flex; align-items: center; gap: 15px; margin-top: 15px; margin-bottom: 20px;"><span style="font-size: 2rem;">🏆</span><div><div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: #10b981; font-weight: 700;">AI Hiring Committee Recommendation</div><div style="font-size: 1.25rem; font-weight: 700; color: var(--text-main);">{recommendation}</div></div></div>'
-                    else:
-                        rec_badge_html = f'<div style="background-color: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.15); border-radius: 12px; padding: 15px 20px; display: flex; align-items: center; gap: 15px; margin-top: 15px; margin-bottom: 20px;"><span style="font-size: 2rem;">⚠️</span><div><div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: #ef4444; font-weight: 700;">AI Hiring Committee Recommendation</div><div style="font-size: 1.25rem; font-weight: 700; color: var(--text-main);">{recommendation}</div></div></div>'
-                    st.markdown(rec_badge_html, unsafe_allow_html=True)
-                    
-                    # Visual Match Score Progress Bar
-                    score = int(matched_candidate.get("match_score", 0))
-                    st.write(f"**AI Match Score**: **{score}%**")
-                    st.progress(score / 100.0)
-                    
-                    # Pipeline Status Badge
-                    status = matched_candidate.get("status", "Applied")
-                    status_badge_html = ""
-                    if "Screening Failed" in status or "Failed" in status:
-                        status_badge_html = f'<span style="background-color: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">🔴 {status}</span>'
-                    elif "Evaluation" in status or "Hired" in status or "Passed" in status:
-                        status_badge_html = f'<span style="background-color: rgba(16, 185, 129, 0.15); color: #10b981; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">🟢 {status}</span>'
-                    else:
-                        status_badge_html = f'<span style="background-color: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">🟡 {status}</span>'
-                    
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.write(f"📧 **Email**: {matched_candidate['email']}")
-                        st.write(f"📞 **Phone**: {matched_candidate['phone']}")
-                        st.write(f"💼 **Role**: {matched_candidate['job_role']}")
-                    with col2:
-                        st.write(f"⏳ **Experience Level**: {matched_candidate['experience']}")
-                        st.markdown(f"📌 **Pipeline Status**: {status_badge_html}", unsafe_allow_html=True)
-                        st.write(f"📊 **MCQ Score**: `{matched_candidate['mcq_score']}`")
-                    
-                    # Skill Gap Analysis
-                    st.write("#### 🎯 Skill Mapping & Gap Analysis")
-                    
-                    # Matched Skills
-                    matched_skills = matched_candidate.get("matched_skills", [])
-                    if matched_skills:
-                        st.write("✅ **Matched Skills (Present in Resume):**")
-                        tags_html = "".join([f'<span style="background-color: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; margin-right: 8px; display: inline-block; margin-bottom: 5px;">{skill}</span>' for skill in matched_skills])
-                        st.markdown(tags_html, unsafe_allow_html=True)
-                    else:
-                        st.write("✅ **Matched Skills:** None identified.")
-                    
-                    # Missing Skills
-                    missing_skills = matched_candidate.get("missing_skills", [])
-                    if missing_skills:
-                        st.write("⚠️ **Missing Skills (Required for JD):**")
-                        tags_html = "".join([f'<span style="background-color: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; margin-right: 8px; display: inline-block; margin-bottom: 5px;">{skill}</span>' for skill in missing_skills])
-                        st.markdown(tags_html, unsafe_allow_html=True)
-                    else:
-                        st.write("⚠️ **Missing Skills:** None identified.")
-                    
-                    # Red Flags
-                    red_flags = matched_candidate.get("red_flags", [])
-                    # Filter out standard nones
-                    has_red_flags = False
-                    if red_flags:
-                        if isinstance(red_flags, list):
-                            has_red_flags = any(x.lower() not in ["none", ""] for x in red_flags)
-                        else:
-                            has_red_flags = red_flags.lower() not in ["none", ""]
-                            
-                    if has_red_flags:
-                        st.write("🚩 **Red Flags / Hiring Concerns:**")
-                        if isinstance(red_flags, list):
-                            for flag in red_flags:
-                                if flag.lower() not in ["none", ""]:
-                                    st.markdown(f"- <span style='color: #ef4444; font-weight: 500;'>{flag}</span>", unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"- <span style='color: #ef4444; font-weight: 500;'>{red_flags}</span>", unsafe_allow_html=True)
-                    
-                    # Screening explanations
-                    if matched_candidate.get("screening_reason"):
-                        st.markdown("**Screening Feedback:**")
-                        st.info(matched_candidate["screening_reason"])
-                    
-                    # Interview recommendation
-                    st.write("#### 🎤 Interview Recommendation")
-                    st.write(f"Recommendation: **{matched_candidate.get('selection', 'N/A')}**")
-                    if matched_candidate.get("summary"):
-                        st.markdown("**Hiring Committee Summary:**")
-                        st.success(matched_candidate["summary"])
-                    
-                    st.write("---")
-                    st.write("#### ⚙️ Administrative Actions")
-                    
-                    col_adm1, col_adm2 = st.columns(2)
-                    with col_adm1:
-                        st.write("**Assessment Access**")
-                        allowed_retake = matched_candidate.get("allowed_retake", False)
-                        if allowed_retake:
-                            st.success("Retake has already been enabled for this candidate.")
-                        else:
-                            if st.button("🔓 Enable Retake / Reset Access", key=f"reset_btn_{matched_candidate['email']}", use_container_width=True):
-                                records = load_candidates()
-                                for r in records:
-                                    if r.get("email", "").strip().lower() == matched_candidate["email"].strip().lower():
-                                        r["allowed_retake"] = True
-                                        r["status"] = "Retake Allowed"
-                                        break
-                                with open(CANDIDATES_FILE, "w") as f:
-                                    json.dump(records, f, indent=2)
-                                st.success(f"Access reset successful! {matched_candidate['name']} can now register and retake the test.")
-                                time.sleep(1)
-                                st.rerun()
-                                
-                    with col_adm2:
-                        st.write("**Danger Zone**")
-                        st.warning("Deletions are permanent.")
-                        if st.button("🗑️ Delete Candidate Record", key=f"delete_btn_{matched_candidate['email']}", use_container_width=True):
-                            records = load_candidates()
-                            filtered_records = [r for r in records if r.get("email", "").strip().lower() != matched_candidate["email"].strip().lower()]
-                            with open(CANDIDATES_FILE, "w") as f:
-                                json.dump(filtered_records, f, indent=2)
-                            
-                            # Also delete any related support tickets
-                            try:
-                                tickets = load_issues()
-                                filtered_tickets = [t for t in tickets if t.get("email", "").strip().lower() != matched_candidate["email"].strip().lower()]
-                                save_issues(filtered_tickets)
-                            except Exception:
-                                pass
-                                
-                            st.success(f"Candidate {matched_candidate['name']} successfully deleted!")
-                            time.sleep(1)
-                            st.rerun()
+        render_candidate_hub()
                         
     with portal_tab3:
         st.subheader("⚠️ Support Requests & AI Diagnoses")
@@ -1839,49 +2413,7 @@ elif st.session_state.stage == "screening_failed":
 
 # ----------------- STAGE 3: TECHNICAL MCQ PHASE -----------------
 elif st.session_state.stage == "mcq":
-    st.markdown("""
-    <div class="glass-card" style="margin-bottom: 20px;">
-        <div class="stage-title">Stage 2: Technical MCQ Screening</div>
-        <div style="color: #64748b; font-size: 0.95rem;">Answer the following questions based on technical competencies. Passing threshold is 60% (3 out of 5 correct).</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Render MCQ form
-    temp_answers = {}
-    for idx, q in enumerate(st.session_state.mcqs):
-        st.markdown(f"**Question {idx + 1}:** {q.question}")
-        # Add index placeholder to options so the radio is unselected initially
-        options = ["Select an option"] + q.options
-        user_choice = st.radio(
-            label=f"Options for Q{idx+1}",
-            options=options,
-            key=f"mcq_q_{idx}",
-            label_visibility="collapsed"
-        )
-        if user_choice != "Select an option":
-            temp_answers[idx] = user_choice
-            
-    
-    
-    if st.button("Submit MCQ Test"):
-        if len(temp_answers) < len(st.session_state.mcqs):
-            st.error("Please answer all multiple-choice questions before submitting.")
-        else:
-            # Score results deterministically
-            # Score results deterministically
-            score, pct, results = MCQAgent.grade_answers(st.session_state.mcqs, temp_answers)
-            st.session_state.mcq_score = score
-            st.session_state.mcq_passed = score >= 3
-            
-            # Save results list if we want to display details
-            st.session_state.mcq_answers = temp_answers
-            
-            if st.session_state.mcq_passed:
-                st.session_state.stage = "mcq_passed_screen"
-            else:
-                st.session_state.stage = "mcq_failed_screen"
-            log_candidate_state()
-            st.rerun()
+    render_mcq_stage()
 
 # ----------------- STAGE 4: MCQ RESULTS -----------------
 elif st.session_state.stage == "mcq_passed_screen":
@@ -1915,191 +2447,8 @@ elif st.session_state.stage == "mcq_failed_screen":
     if st.button("Back to Start"):
         restart_process()
 
-# ----------------- STAGE 5: CONVERSATIONAL TECHNICAL INTERVIEW -----------------
 elif st.session_state.stage == "interview":
-    st.markdown("""
-    <div class="glass-card" style="margin-bottom: 20px;">
-        <div class="stage-title">Stage 3: Interactive Technical Interview</div>
-        <div style="color: #64748b; font-size: 0.95rem;">Respond to the Interview Agent. They will ask questions tailored to your resume skills.</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Display Chat Bubbles using custom HTML elements
-    chat_html = '<div class="chat-bubble-container">'
-    for message in st.session_state.chat_history:
-        formatted_content = format_chat_text(message["content"])
-        if message["role"] == "user":
-            chat_html += f"""
-            <div class="chat-bubble chat-bubble-user">
-                <span class="chat-avatar">🧑</span> {formatted_content}
-            </div>
-            """
-        else:
-            chat_html += f"""
-            <div class="chat-bubble chat-bubble-assistant">
-                <span class="chat-avatar chat-avatar-ai">🤖</span> {formatted_content}
-            </div>
-            """
-    chat_html += '</div>'
-    st.markdown(chat_html, unsafe_allow_html=True)
-            
-    # Replay button for manually reading the last question
-    if st.session_state.chat_history and st.session_state.chat_history[-1]["role"] == "assistant":
-        col_rep1, col_rep2 = st.columns([3, 7])
-        with col_rep1:
-            if st.button("🔊 Replay Question", use_container_width=True):
-                st.session_state.last_spoken_message = ""
-                st.rerun()
-                
-    st.write("---")
-    
-    # Chat Input
-    if not st.session_state.interview_concluded:
-        # Choose between typing or voice input
-        input_method = st.radio("Input Method", ["⌨️ Type response", "🎙️ Record Voice response"], horizontal=True, key="interview_input_method")
-        
-        user_response_text = ""
-        
-        if input_method == "⌨️ Type response":
-            # Form to clear text input on submit
-            with st.form("chat_form", clear_on_submit=True):
-                user_input = st.text_area("Your Response", placeholder="Type your answer here and click Send...")
-                submitted = st.form_submit_button("Send Answer")
-                
-            if submitted and user_input.strip():
-                user_response_text = user_input.strip()
-        else:
-            # Voice recording instructions
-            st.info("🎙️ **Voice Instructions**: Click the microphone icon below to start recording. Speak your answer clearly, and click the stop icon when you are finished. Then click **Submit Answer**.")
-            # Render native audio mic input
-            audio_file = st.audio_input("Record your answer", key="interview_audio_record")
-            if audio_file:
-                st.audio(audio_file)
-                if st.button("Submit Answer"):
-                    with st.spinner("Transcribing your audio..."):
-                        try:
-                            # Load credentials and transcribe
-                            config = Config.load_config()
-                            from google import genai
-                            from google.genai import types
-                            
-                            client = genai.Client(api_key=config.GEMINI_API_KEY)
-                            audio_bytes = audio_file.read()
-                            
-                            response = client.models.generate_content(
-                                model='gemini-2.5-flash',
-                                contents=[
-                                    types.Part.from_bytes(
-                                        data=audio_bytes,
-                                        mime_type=audio_file.type
-                                    ),
-                                    "Transcribe the spoken technical words in this audio into text accurately. Do not add any conversational framing or headers, just return the text transcription."
-                                ]
-                            )
-                            transcription = response.text.strip() if response.text else ""
-                            if transcription:
-                                user_response_text = transcription
-                            else:
-                                st.error("No speech detected. Please record again.")
-                        except Exception as e:
-                            st.error(f"Voice transcription failed: {str(e)}")
-                            
-        if user_response_text:
-            # Append user answer
-            st.session_state.chat_history.append({"role": "user", "content": user_response_text})
-            st.rerun()
-            
-        # Get count of interviewer questions to trigger evaluate
-        interviewer_questions = [msg for msg in st.session_state.chat_history if msg["role"] == "assistant"]
-        
-        # If the last message was a user response, we invoke the agent
-        if st.session_state.chat_history[-1]["role"] == "user":
-            user_response_text = st.session_state.chat_history[-1]["content"]
-            with st.spinner("Interviewer is reviewing your answer..."):
-                try:
-                    # Find last assistant question
-                    last_assistant_msg = ""
-                    for msg in reversed(st.session_state.chat_history[:-1]):
-                        if msg["role"] == "assistant":
-                            last_assistant_msg = msg["content"]
-                            break
-                            
-                    repeat_agent = RepeatAgent()
-                    clarification = repeat_agent.run(
-                        candidate_message=user_response_text,
-                        last_question=last_assistant_msg
-                    )
-                    
-                    if clarification.is_clarification_request:
-                        st.session_state.chat_history.append({
-                            "role": "assistant",
-                            "content": clarification.clarified_response
-                        })
-                        st.rerun()
-                        
-                    interview_agent = InterviewAgent()
-                    # We pass the history (excluding the very first welcoming greeting in the count)
-                    # We ask 3 total questions (excluding welcome)
-                    job_diff = JOB_DIFFICULTIES.get(st.session_state.job_role, "Medium")
-                    res = interview_agent.run(
-                        resume_text=st.session_state.resume_text,
-                        job_role=st.session_state.job_role,
-                        experience=st.session_state.experience,
-                        job_description=st.session_state.job_description,
-                        conversation_history=st.session_state.chat_history,
-                        difficulty=job_diff,
-                        num_questions=3
-                    )
-                    
-                    st.session_state.chat_history.append({"role": "assistant", "content": res.response})
-                    if res.should_conclude:
-                        st.session_state.interview_concluded = True
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error during interview conversation: {str(e)}")
-    else:
-        st.success("The interview session is complete! Clicking below will trigger the evaluation phase.")
-        if st.button("Get Selection Results"):
-            with st.spinner("Hiring Committee Agent is evaluating the complete interview transcript..."):
-                try:
-                    interview_agent = InterviewAgent()
-                    eval_res = interview_agent.evaluate(
-                        resume_text=st.session_state.resume_text,
-                        job_role=st.session_state.job_role,
-                        experience=st.session_state.experience,
-                        job_description=st.session_state.job_description,
-                        conversation_history=st.session_state.chat_history
-                    )
-                    st.session_state.evaluation_result = eval_res
-                    st.session_state.stage = "final_evaluation"
-                    log_candidate_state()
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error during final evaluation: {str(e)}")
-
-    # Speech synthesis logic - run once per unique assistant message
-    if "last_spoken_message" not in st.session_state:
-        st.session_state.last_spoken_message = ""
-        
-    if st.session_state.chat_history and st.session_state.chat_history[-1]["role"] == "assistant":
-        last_msg = st.session_state.chat_history[-1]["content"]
-        if st.session_state.last_spoken_message != last_msg:
-            # Clean formatting for JS string
-            clean_msg = last_msg.replace('**', '').replace('*', '').replace('`', '').replace('"', '\\"').replace('\n', ' ')
-            st.components.v1.html(f"""
-            <script>
-                if ('speechSynthesis' in window) {{
-                    window.parent.speechSynthesis.cancel();
-                    var utterance = new SpeechSynthesisUtterance("{clean_msg}");
-                    utterance.rate = 1.05;
-                    var voices = window.parent.speechSynthesis.getVoices();
-                    var engVoice = voices.find(v => v.lang.startsWith('en'));
-                    if (engVoice) utterance.voice = engVoice;
-                    window.parent.speechSynthesis.speak(utterance);
-                }}
-            </script>
-            """, height=0)
-            st.session_state.last_spoken_message = last_msg
+    render_interview_stage()
 
 # ----------------- STAGE 6: FINAL EVALUATION SCREEN & EMAIL -----------------
 elif st.session_state.stage == "final_evaluation":
