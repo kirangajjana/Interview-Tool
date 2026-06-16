@@ -16,38 +16,6 @@
     "candidate_notification": "Hello Kiran, we understand your test was stopped due to a proctoring warning you weren't aware of. We've gone ahead and reset your access to the MCQ test. You can now re-register and attempt the test immediately! Please remember that strict tab-switching rules are in place during the assessment, so ensure you stay on the test window to avoid any interruptions."
   },
   {
-    "email": "kiran.gajjana@gmail.com",
-    "name": "kiran",
-    "job_role": "ai/ml engineer",
-    "message": "hey my test was stopped in the middle due to some technical error",
-    "diagnosis": "The candidate reported that their technical MCQ test was interrupted mid-way due to an unspecified technical error, preventing them from completing it. Their current score of 0/5 supports the claim of an incomplete test.",
-    "severity": "Medium",
-    "suggested_action": "Reset MCQ test access",
-    "timestamp": "2026-06-15 16:38:26",
-    "resolved": true,
-    "resolved_by": "AI Auto-Resolver",
-    "justification": "The candidate explicitly stated that their test 'was stopped in the middle due to some technical error.' Although the specific nature of the error is not detailed, this indicates a disruption preventing test completion. The candidate's current MCQ score of 0/5 further supports the claim that the test was not completed successfully. This falls under the guardrail for genuine technical issues that prevent test completion, making it eligible for an automatic reset.",
-    "confidence_score": 0.85,
-    "resolution_log": "Auto-approved reset. Justification: The candidate explicitly stated that their test 'was stopped in the middle due to some technical error.' Although the specific nature of the error is not detailed, this indicates a disruption preventing test completion. The candidate's current MCQ score of 0/5 further supports the claim that the test was not completed successfully. This falls under the guardrail for genuine technical issues that prevent test completion, making it eligible for an automatic reset.",
-    "candidate_notification": "Hello Kiran, we understand that your technical MCQ test was interrupted due to a technical error. We have automatically reset your access, and you can now register and retake the test immediately. Please ensure you have a stable internet connection and avoid switching tabs during the assessment to prevent any further interruptions. Good luck!"
-  },
-  {
-    "email": "kiran.gajjana@gmail.com",
-    "name": "kiran",
-    "job_role": "ai/ml engineer",
-    "message": "i was not able to reset can you reset again",
-    "diagnosis": "The candidate, Kiran Gajjana, is requesting a test reset with a very vague message: \"i was not able to reset can you reset again\". There are no details provided regarding the reason for the reset request or any technical issues encountered.",
-    "severity": "Low",
-    "suggested_action": "Contact candidate for more details / Manual review by recruiter",
-    "timestamp": "2026-06-15 16:43:30",
-    "resolved": false,
-    "resolved_by": "Pending Review",
-    "justification": "The candidate's message is too vague and lacks specific technical details to determine if it's a genuine technical issue eligible for auto-resolution. It does not describe any system crashes, internet disconnections, proctoring issues, or accidental closures. As per guardrails, vague requests without technical details require manual review.",
-    "confidence_score": 0.9,
-    "resolution_log": "",
-    "candidate_notification": "Hello Kiran, thank you for reaching out! Your request to reset your test access has been routed to our recruitment team for manual review. We need a bit more detail to understand the issue you encountered. A recruiter will look into this shortly and may reach out for more information. We appreciate your patience!"
-  },
-  {
     "email": "admin@test.com",
     "name": "Admin Tester",
     "job_role": "ai/ml engineer",

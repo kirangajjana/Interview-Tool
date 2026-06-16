@@ -45,76 +45,92 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Theme styles variables definitions
+if "theme_mode" not in st.session_state:
+    st.session_state.theme_mode = "Enterprise Light"
+
+theme = st.session_state.theme_mode
+
+if theme == "Cyberpunk Dark":
+    root_vars = """
+        --bg-gradient: linear-gradient(135deg, #020204 0%, #08080a 50%, #000000 100%);
+        --text-main: #f4f4f5;
+        --text-sub: #a1a1aa;
+        --card-bg: rgba(8, 8, 10, 0.85);
+        --card-border: rgba(229, 9, 20, 0.4);
+        --sidebar-bg: #020204;
+        --sidebar-border: rgba(229, 9, 20, 0.3);
+        --accent-red: #ff3344;
+        --accent-red-hover: #ff001c;
+        --accent-gold: #f5c518;
+        --input-bg: rgba(12, 12, 14, 0.9);
+        --input-border: rgba(229, 9, 20, 0.3);
+        --input-text: #ffffff;
+        --listbox-bg: #08080a;
+        --listbox-option-hover: rgba(229, 9, 20, 0.2);
+        --jd-bg: rgba(8, 8, 10, 0.95);
+        --tab-bg: rgba(12, 12, 14, 0.8);
+        --tab-hover-bg: rgba(229, 9, 20, 0.15);
+        --tab-active-bg: rgba(229, 9, 20, 0.25);
+        --bubble-assistant-bg: rgba(24, 24, 27, 0.8);
+        --bubble-assistant-border: rgba(229, 9, 20, 0.3);
+        --bubble-assistant-text: #f4f4f5;
+        --stepper-before-bg: rgba(229, 9, 20, 0.3);
+        --stepper-counter-bg: #08080a;
+        --stepper-counter-border: rgba(229, 9, 20, 0.4);
+        --stepper-counter-text: #a1a1aa;
+        --card-hover-border: #ff3344;
+        --badge-time-bg: rgba(229, 9, 20, 0.15);
+        --badge-time-text: #f4f4f5;
+        --badge-red-bg: rgba(229, 9, 20, 0.25);
+    """
+else: # Enterprise Light
+    root_vars = """
+        --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 55%, #e2e8f0 100%);
+        --text-main: #0f172a;
+        --text-sub: #475569;
+        --card-bg: #ffffff;
+        --card-border: #e2e8f0;
+        --sidebar-bg: #f8fafc;
+        --sidebar-border: #e2e8f0;
+        --accent-red: #b91c1c;
+        --accent-red-hover: #991b1b;
+        --accent-gold: #d97706;
+        --input-bg: #ffffff;
+        --input-border: #cbd5e1;
+        --input-text: #0f172a;
+        --listbox-bg: #ffffff;
+        --listbox-option-hover: rgba(185, 28, 28, 0.08);
+        --jd-bg: #f8fafc;
+        --tab-bg: #f1f5f9;
+        --tab-hover-bg: rgba(185, 28, 28, 0.05);
+        --tab-active-bg: #ffffff;
+        --bubble-assistant-bg: #f8fafc;
+        --bubble-assistant-border: #e2e8f0;
+        --bubble-assistant-text: #0f172a;
+        --stepper-before-bg: #cbd5e1;
+        --stepper-counter-bg: #ffffff;
+        --stepper-counter-border: #cbd5e1;
+        --stepper-counter-text: #475569;
+        --card-hover-border: rgba(185, 28, 28, 0.4);
+        --badge-time-bg: #f1f5f9;
+        --badge-time-text: #475569;
+        --badge-red-bg: rgba(185, 28, 28, 0.08);
+    """
+
+# Inject root CSS variables based on active theme
+st.markdown(f"""
+<style>
+    :root {{
+        {root_vars}
+    }}
+</style>
+""", unsafe_allow_html=True)
+
 # Custom premium styling inject
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-    
-    :root {
-        /* Colors */
-        --bg-gradient: linear-gradient(135deg, #fafafa 0%, #f4f4f5 55%, #e4e4e7 100%);
-        --text-main: #18181b;
-        --text-sub: #71717a;
-        --card-bg: #ffffff;
-        --card-border: #e4e4e7;
-        --sidebar-bg: #fafafa;
-        --sidebar-border: #e4e4e7;
-        --accent-red: #e50914;
-        --accent-red-hover: #b81d24;
-        --accent-gold: #f5c518;
-        --input-bg: #ffffff;
-        --input-border: #d4d4d8;
-        --input-text: #18181b;
-        --listbox-bg: #ffffff;
-        --listbox-option-hover: rgba(229, 9, 20, 0.08);
-        --jd-bg: #fafafa;
-        --tab-bg: #f4f4f5;
-        --tab-hover-bg: rgba(229, 9, 20, 0.05);
-        --tab-active-bg: #ffffff;
-        --bubble-assistant-bg: #ffffff;
-        --bubble-assistant-border: #e4e4e7;
-        --bubble-assistant-text: #18181b;
-        --stepper-before-bg: #e4e4e7;
-        --stepper-counter-bg: #ffffff;
-        --stepper-counter-border: #e4e4e7;
-        --stepper-counter-text: #71717a;
-        --card-hover-border: rgba(229, 9, 20, 0.2);
-        --badge-time-bg: #f1f5f9;
-        --badge-time-text: #475569;
-        --badge-red-bg: rgba(229, 9, 20, 0.08);
-    }
-    
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --bg-gradient: linear-gradient(135deg, #09090b 0%, #18181b 50%, #030303 100%);
-            --text-main: #f4f4f5;
-            --text-sub: #a1a1aa;
-            --card-bg: rgba(24, 24, 27, 0.65);
-            --card-border: rgba(255, 255, 255, 0.08);
-            --sidebar-bg: #09090b;
-            --sidebar-border: rgba(255, 255, 255, 0.08);
-            --input-bg: rgba(20, 20, 25, 0.8);
-            --input-border: rgba(255, 255, 255, 0.12);
-            --input-text: #ffffff;
-            --listbox-bg: #18181b;
-            --listbox-option-hover: rgba(229, 9, 20, 0.15);
-            --jd-bg: rgba(24, 24, 27, 0.9);
-            --tab-bg: rgba(24, 24, 27, 0.8);
-            --tab-hover-bg: rgba(255, 255, 255, 0.05);
-            --tab-active-bg: rgba(255, 255, 255, 0.1);
-            --bubble-assistant-bg: rgba(39, 39, 42, 0.7);
-            --bubble-assistant-border: rgba(255, 255, 255, 0.08);
-            --bubble-assistant-text: #f4f4f5;
-            --stepper-before-bg: #27272a;
-            --stepper-counter-bg: #18181b;
-            --stepper-counter-border: #27272a;
-            --stepper-counter-text: #71717a;
-            --card-hover-border: rgba(229, 9, 20, 0.4);
-            --badge-time-bg: rgba(255, 255, 255, 0.08);
-            --badge-time-text: #d4d4d8;
-            --badge-red-bg: rgba(229, 9, 20, 0.15);
-        }
-    }
     
     /* Global Styles */
     html, body, [class*="css"] {
@@ -186,6 +202,21 @@ st.markdown("""
         100% {
             box-shadow: 0 0 0 0 rgba(229, 9, 20, 0);
         }
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    div[data-baseweb="tabpanel"] {
+        animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
     
     /* Header Gradient */
@@ -356,13 +387,13 @@ st.markdown("""
         background: var(--card-bg) !important;
         border: 1px solid var(--card-border) !important;
         border-radius: 100px !important;
-        padding: 6px !important;
+        padding: 8px !important; /* Increased padding */
         display: flex !important;
         flex-direction: row !important; /* Force horizontal layout at all times */
         flex-wrap: nowrap !important; /* Prevent vertical wrapping */
         justify-content: space-between !important;
         align-items: center !important;
-        gap: 6px !important;
+        gap: 8px !important;
         margin-bottom: 35px !important;
         backdrop-filter: blur(20px) !important;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
@@ -371,7 +402,7 @@ st.markdown("""
     }
     
     /* Hide the radio button circles visually */
-    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] > div:first-child {
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label > div:first-child {
         opacity: 0 !important;
         width: 0px !important;
         height: 0px !important;
@@ -380,14 +411,19 @@ st.markdown("""
         overflow: hidden !important;
     }
     
+    /* Hide navigation header label completely */
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-testid="stWidgetLabel"] {
+        display: none !important;
+    }
+    
     /* Style the labels as tabs */
-    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] {
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label {
         background-color: transparent !important;
         border: none !important;
-        padding: 10px 24px !important; /* Slightly reduced padding to guarantee single-line fit */
+        padding: 14px 28px !important; /* Increased padding for a larger size */
         border-radius: 100px !important;
         font-weight: 600 !important;
-        font-size: 0.95rem !important; /* Slightly reduced base font size */
+        font-size: 1.05rem !important; /* Increased font-size */
         cursor: pointer !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         margin: 0 !important;
@@ -398,27 +434,27 @@ st.markdown("""
         flex: 1 1 auto !important; /* Distribute space evenly */
         min-width: 0 !important;
     }
-    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"],
-    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] * {
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label,
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label * {
         color: var(--text-sub) !important;
     }
     
     /* Hover state */
-    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:hover {
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label:hover {
         background-color: var(--tab-hover-bg) !important;
     }
-    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:hover,
-    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:hover * {
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label:hover,
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label:hover * {
         color: var(--accent-red) !important;
     }
     
     /* Active/Checked state */
-    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label:has(input:checked) {
         background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover)) !important;
         box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4) !important;
     }
-    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked),
-    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) * {
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label:has(input:checked),
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label:has(input:checked) * {
         color: #ffffff !important;
     }
     
@@ -441,7 +477,7 @@ st.markdown("""
         width: 100% !important;
         overflow: hidden !important;
     }
-    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] > div:first-child {
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label > div:first-child {
         opacity: 0 !important;
         width: 0px !important;
         height: 0px !important;
@@ -449,7 +485,7 @@ st.markdown("""
         padding: 0 !important;
         overflow: hidden !important;
     }
-    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] {
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label {
         background-color: transparent !important;
         border: none !important;
         padding: 10px 24px !important;
@@ -466,49 +502,70 @@ st.markdown("""
         flex: 1 1 auto !important;
         min-width: 0 !important;
     }
-    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"],
-    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] * {
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label,
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label * {
         color: var(--text-sub) !important;
     }
-    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:hover {
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label:hover {
         background-color: var(--tab-hover-bg) !important;
     }
-    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:hover,
-    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:hover * {
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label:hover,
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label:hover * {
         color: var(--accent-red) !important;
     }
-    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label:has(input:checked) {
         background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover)) !important;
         box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4) !important;
     }
-    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked),
-    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) * {
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label:has(input:checked),
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label:has(input:checked) * {
         color: #ffffff !important;
     }
     @media (max-width: 640px) {
-        div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label[data-baseweb="radio"] {
+        div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label {
             padding: 8px 12px !important;
             font-size: 0.82rem !important;
         }
     }
 
-    /* Custom buttons */
     .stButton>button {
-        background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover));
-        color: white;
-        border: none;
-        border-radius: 10px;
-        padding: 12px 28px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(229, 9, 20, 0.25);
+        background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover)) !important;
+        color: white !important;
+        border: 1px solid transparent !important;
+        border-radius: 10px !important;
+        padding: 12px 28px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        box-shadow: 0 4px 15px rgba(229, 9, 20, 0.15) !important;
     }
     
     .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(229, 9, 20, 0.4);
-        background: linear-gradient(135deg, var(--accent-red-hover), #911217);
+        transform: translateY(-2px) !important;
+        box-shadow: 0 0 20px var(--accent-red) !important;
+        background: linear-gradient(135deg, var(--accent-red-hover), var(--accent-red)) !important;
+        border-color: var(--accent-red) !important;
         color: white !important;
+    }
+    
+    /* Small, curved theme toggle button */
+    .theme-toggle-container button {
+        border-radius: 100px !important;
+        padding: 6px 16px !important;
+        font-size: 0.88rem !important;
+        font-weight: 600 !important;
+        background: var(--card-bg) !important;
+        color: var(--text-main) !important;
+        border: 1px solid var(--card-border) !important;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04) !important;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    }
+    
+    .theme-toggle-container button:hover {
+        border-color: var(--accent-red) !important;
+        color: var(--accent-red) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 6px 15px rgba(229, 9, 20, 0.08) !important;
+        background: var(--tab-hover-bg) !important;
     }
     
     /* Stepper Progress Indicator Styling */
@@ -844,6 +901,28 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Synchronize Python proctoring state with JavaScript context
+proctoring_active_flag = (
+    st.session_state.get("candidate_logged_in", False) and 
+    st.session_state.get("current_page") == "🎯 Candidate Assessment" and 
+    st.session_state.get("stage") in ["mcq", "interview"]
+)
+
+st.components.v1.html(
+    f"""
+    <script>
+        window.parent.__proctoring_active__ = {"true" if proctoring_active_flag else "false"};
+        if (!window.parent.__proctoring_active__) {{
+            const popup = window.parent.document.getElementById('proctor-cursor-popup');
+            if (popup) {{
+                popup.remove();
+            }}
+        }}
+    </script>
+    """,
+    height=0
+)
+
 # Inject Global Enter Key Interceptor JavaScript to move focus to next input field instead of reloading page
 st.components.v1.html("""
 <script>
@@ -929,18 +1008,10 @@ def format_chat_text(text):
 
 @st.fragment
 def render_sidebar_chatbot():
-    st.markdown("### 🤖 Recruitment Assistant")
-    st.write("Ask about open roles and job requirements:")
-
-    # Capture query input
-    sidebar_input = st.chat_input("Ask about roles...", key="sidebar_chatbot_input_key")
-    if sidebar_input:
-        # Append and show user message immediately
+    # Helper query trigger
+    def trigger_chatbot_query(sidebar_input):
         st.session_state.sidebar_chat_history.append({"role": "user", "content": sidebar_input})
-        
-        # Generate bot response via Gemini
         try:
-            # Load configuration and initialize inline chain
             config = Config.load_config()
             from langchain_google_genai import ChatGoogleGenerativeAI
             from langchain_core.prompts import ChatPromptTemplate
@@ -951,23 +1022,35 @@ def render_sidebar_chatbot():
                 temperature=0.3
             )
             
-            # Format JD details
             jds_text = ""
             for role, jd in PREDEFINED_JDS.items():
                 if role != "Custom / Write your own":
                     jds_text += f"- Job Role: {role}\n  Description: {jd}\n\n"
                     
             system_prompt = f"""You are a helpful, friendly HR chatbot assistant for our recruitment platform.
-Your job is to answer user queries about open roles, available positions, job requirements, and technical expectations.
+Your job is to answer user queries about open roles, requirements, and our assessment/hiring process.
 
-Here is the list of open positions and their details:
+Here are the open roles and their details:
 {jds_text}
 
-Rules:
-1. Only provide answers based on the open roles listed above.
-2. If they ask if a specific role is available, confirm if it is in the list.
-3. If they ask about a role that is NOT in the list, politely inform them it's currently not listed, but they can select 'Custom / Write your own' in the Candidate Assessment tab to evaluate their custom profile.
-4. Keep your responses short, helpful, and professional (max 2-3 sentences).
+Here is our candidate assessment process and rules:
+1. Candidate Assessment Stages:
+   - Stage 1: Resume Upload & Screening. Parses resume, analyzes skill gaps, and checks eligibility.
+   - Stage 2: Technical MCQ Screening. 5 technical multiple-choice questions customized to the candidate's resume and job role. Passing score is 60% (at least 3 out of 5 correct). Failing disqualifies the candidate.
+   - Stage 3: Interactive Technical Interview. Adaptive conversational AI interview (3 questions). Supports voice recording (automatic transcription) or text response. An audio replay button is available to listen to the interviewer's question.
+2. AI Proctoring & Security Rules:
+   - Tab switching or losing browser window focus (blur) is strictly tracked during MCQ and Interview stages.
+   - Immediate warnings are shown on screen. A maximum of 3 warnings is allowed.
+   - On the 4th violation, the test is automatically submitted and flagged, and the candidate is disqualified.
+   - Copy-pasting is strictly blocked/prohibited.
+3. Help Desk & Retakes:
+   - Candidates facing issues (system error, browser freeze, accidental exit) can submit a ticket in the 'Profile & Help Center' tab.
+   - An AI Support Agent or Recruiter reviews tickets. If approved, candidates can reset and restart their assessment session.
+
+Rules for your responses:
+1. Base your answers strictly on the open roles and process rules listed above.
+2. If asked about a role not listed, suggest selecting 'Custom / Write your own' in the Candidate Assessment tab.
+3. Keep responses helpful, direct, and professional (max 2-3 sentences).
 """
             history_str = ""
             for m in st.session_state.sidebar_chat_history[:-1]:
@@ -989,11 +1072,74 @@ Rules:
             st.session_state.sidebar_chat_history.append({"role": "assistant", "content": bot_text})
         except Exception as e:
             st.session_state.sidebar_chat_history.append({"role": "assistant", "content": f"Assistant error: {str(e)}"})
+        st.rerun()
 
-    # Render chatbot transcript in sidebar
-    for msg in st.session_state.sidebar_chat_history:
-        with st.chat_message(msg["role"]):
-            st.write(msg["content"])
+    # Clear history button next to heading
+    col_lbl, col_clr = st.columns([7.8, 2.2])
+    with col_lbl:
+        st.markdown("### 🤖 Recruitment Assistant")
+    with col_clr:
+        if st.session_state.sidebar_chat_history:
+            if st.button("🗑️ Clear", key="clear_chat_history_btn", use_container_width=True):
+                st.session_state.sidebar_chat_history = []
+                st.rerun()
+
+    st.write("Ask about open roles and job requirements:")
+
+    # Render chatbot transcript in scrollable container
+    with st.container(height=260):
+        if not st.session_state.sidebar_chat_history:
+            st.markdown("<p style='color: var(--text-sub); font-style: italic; font-size: 0.9rem;'>No messages yet. Ask me anything about open positions!</p>", unsafe_allow_html=True)
+        for msg in st.session_state.sidebar_chat_history:
+            avatar = "🧑" if msg["role"] == "user" else "🤖"
+            with st.chat_message(msg["role"], avatar=avatar):
+                st.write(msg["content"])
+
+    # Render quick tags if chat is empty
+    if not st.session_state.sidebar_chat_history:
+        st.write("💡 **Quick Questions:**")
+        col_t1, col_t2, col_t3 = st.columns(3)
+        with col_t1:
+            if st.button("💼 View Positions", key="qt_open_positions", use_container_width=True):
+                with st.spinner("Thinking..."):
+                    trigger_chatbot_query("What open positions are available?")
+        with col_t2:
+            if st.button("📝 How to apply?", key="qt_apply_flow", use_container_width=True):
+                with st.spinner("Thinking..."):
+                    trigger_chatbot_query("How do I apply for a role?")
+        with col_t3:
+            if st.button("🛡️ Proctoring Rules", key="qt_proctoring_rules", use_container_width=True):
+                with st.spinner("Thinking..."):
+                    trigger_chatbot_query("What are the test proctoring rules?")
+    else:
+        # Show suggested follow-up questions
+        st.write("🔍 **Suggested Follow-up:**")
+        col_s1, col_s2 = st.columns(2)
+        with col_s1:
+            if st.button("🛠️ AI/ML Engineer skills?", key="suggest_aiml_skills", use_container_width=True):
+                with st.spinner("Thinking..."):
+                    trigger_chatbot_query("What skills are required for the AI/ML Engineer role?")
+        with col_s2:
+            if st.button("💻 Frontend expectations?", key="suggest_frontend_expectations", use_container_width=True):
+                with st.spinner("Thinking..."):
+                    trigger_chatbot_query("What are the expectations for the Frontend Engineer position?")
+
+    # Render clean inline text input box using form
+    with st.form("sidebar_chat_inline_form", clear_on_submit=True):
+        col_inp, col_btn = st.columns([8.2, 1.8])
+        with col_inp:
+            user_input = st.text_input(
+                "Ask about roles...",
+                placeholder="Ask about requirements, roles, or difficulties...",
+                label_visibility="collapsed",
+                key="chatbot_input_text_box"
+            )
+        with col_btn:
+            submitted = st.form_submit_button("Send", use_container_width=True)
+
+    if submitted and user_input.strip():
+        with st.spinner("Thinking..."):
+            trigger_chatbot_query(user_input.strip())
 
 
 @st.fragment
@@ -1137,9 +1283,112 @@ def render_candidate_hub():
                 st.write("---")
                 
                 st.write("#### 🎯 Skill Mapping & Gap Analysis")
+                
+                # Interactive Plotly Radar / Fallback Bar Chart
+                matched_skills = matched_candidate.get("matched_skills", [])
+                missing_skills = matched_candidate.get("missing_skills", [])
+                all_skills = matched_skills + missing_skills
+                
+                if all_skills:
+                    import plotly.graph_objects as go
+                    import pandas as pd
+                    
+                    categories = list(dict.fromkeys(all_skills))
+                    if len(categories) < 3:
+                        import plotly.express as px
+                        df_skills = pd.DataFrame({
+                            "Skill": categories,
+                            "Status": ["Matched" if s in matched_skills else "Missing" for s in categories],
+                            "Match Status": [100 if s in matched_skills else 0 for s in categories]
+                        })
+                        fig = px.bar(
+                            df_skills,
+                            x="Match Status",
+                            y="Skill",
+                            color="Status",
+                            orientation='h',
+                            color_discrete_map={"Matched": "#ff3344" if st.session_state.get("theme_mode") == "Cyberpunk Dark" else "#b91c1c", "Missing": "#a1a1aa"},
+                            range_x=[0, 100]
+                        )
+                        fig.update_layout(
+                            height=150,
+                            margin=dict(l=10, r=10, t=10, b=10),
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            xaxis=dict(
+                                tickvals=[0, 50, 100],
+                                ticktext=['0%', '50%', '100%'],
+                                title="Candidate Skill Level"
+                            ),
+                            yaxis=dict(title=""),
+                            font=dict(
+                                color='#f4f4f5' if st.session_state.get("theme_mode") == "Cyberpunk Dark" else '#0f172a',
+                                family='Outfit, sans-serif'
+                            )
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        candidate_vals = [100 if skill in matched_skills else 0 for skill in categories]
+                        target_vals = [100] * len(categories)
+                        
+                        categories_closed = categories + [categories[0]]
+                        candidate_vals_closed = candidate_vals + [candidate_vals[0]]
+                        target_vals_closed = target_vals + [target_vals[0]]
+                        
+                        fig = go.Figure()
+                        
+                        # Candidate profile
+                        fig.add_trace(go.Scatterpolar(
+                            r=candidate_vals_closed,
+                            theta=categories_closed,
+                            fill='toself',
+                            name='Candidate Profile',
+                            fillcolor='rgba(229, 9, 20, 0.2)' if st.session_state.get("theme_mode") == "Cyberpunk Dark" else 'rgba(185, 28, 28, 0.2)',
+                            line=dict(color='#ff3344' if st.session_state.get("theme_mode") == "Cyberpunk Dark" else '#b91c1c')
+                        ))
+                        
+                        # Required profile
+                        fig.add_trace(go.Scatterpolar(
+                            r=target_vals_closed,
+                            theta=categories_closed,
+                            fill='toself',
+                            name='Job Requirements',
+                            fillcolor='rgba(59, 130, 246, 0.1)',
+                            line=dict(color='#3b82f6', dash='dash')
+                        ))
+                        
+                        fig.update_layout(
+                            polar=dict(
+                                radialaxis=dict(
+                                    visible=True,
+                                    range=[0, 100],
+                                    tickvals=[0, 50, 100],
+                                    ticktext=['0%', '50%', '100%'],
+                                    gridcolor='rgba(128, 128, 128, 0.2)',
+                                    linecolor='rgba(128, 128, 128, 0.2)'
+                                ),
+                                angularaxis=dict(
+                                    gridcolor='rgba(128, 128, 128, 0.2)',
+                                    linecolor='rgba(128, 128, 128, 0.2)'
+                                )
+                            ),
+                            showlegend=True,
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            margin=dict(l=50, r=50, t=30, b=30),
+                            height=320,
+                            font=dict(
+                                color='#f4f4f5' if st.session_state.get("theme_mode") == "Cyberpunk Dark" else '#0f172a',
+                                family='Outfit, sans-serif'
+                            )
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("No skill mapping data available.")
+                
+                st.write("")
                 col_sk1, col_sk2 = st.columns(2)
                 with col_sk1:
-                    matched_skills = matched_candidate.get("matched_skills", [])
                     if matched_skills:
                         st.write("✅ **Matched Skills (Present in Resume):**")
                         tags_html = "".join([f'<span style="background-color: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; margin-right: 8px; display: inline-block; margin-bottom: 5px; font-weight: 500;">{skill}</span>' for skill in matched_skills])
@@ -1147,7 +1396,6 @@ def render_candidate_hub():
                     else:
                         st.write("✅ **Matched Skills:** None identified.")
                 with col_sk2:
-                    missing_skills = matched_candidate.get("missing_skills", [])
                     if missing_skills:
                         st.write("⚠️ **Missing Skills (Required for JD):**")
                         tags_html = "".join([f'<span style="background-color: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; margin-right: 8px; display: inline-block; margin-bottom: 5px; font-weight: 500;">{skill}</span>' for skill in missing_skills])
@@ -1243,6 +1491,76 @@ def render_candidate_hub():
                 
                 if warnings:
                     st.write("##### ⏳ Focus Loss Timeline Logs")
+                    
+                    import pandas as pd
+                    import datetime
+                    import plotly.express as px
+                    
+                    # Construct datetimes from warnings
+                    today = datetime.date.today()
+                    times = []
+                    for w in warnings:
+                        try:
+                            t_parsed = datetime.datetime.strptime(w, "%H:%M:%S").time()
+                            times.append(datetime.datetime.combine(today, t_parsed))
+                        except Exception:
+                            times.append(datetime.datetime.now())
+                    
+                    df_warn = pd.DataFrame({
+                        "Time": times,
+                        "Event": [f"Focus Loss {i}" for i in range(1, len(warnings) + 1)],
+                        "Type": ["Tab Switch / Focus Loss"] * len(warnings)
+                    })
+                    
+                    fig_timeline = px.scatter(
+                        df_warn,
+                        x="Time",
+                        y="Type",
+                        color="Event",
+                        symbol="Event",
+                        color_discrete_sequence=px.colors.qualitative.Antique,
+                        hover_name="Event",
+                        hover_data={"Time": "|%H:%M:%S", "Type": False}
+                    )
+                    
+                    fig_timeline.update_layout(
+                        height=160,
+                        margin=dict(l=10, r=10, t=10, b=10),
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        xaxis=dict(
+                            showgrid=True,
+                            gridcolor='rgba(128, 128, 128, 0.2)',
+                            tickformat="%H:%M:%S",
+                            title="Time of Violation"
+                        ),
+                        yaxis=dict(
+                            showgrid=False,
+                            title="",
+                            showticklabels=False
+                        ),
+                        legend=dict(
+                            orientation="h",
+                            yanchor="bottom",
+                            y=1.02,
+                            xanchor="right",
+                            x=1
+                        ),
+                        font=dict(
+                            color='#f4f4f5' if st.session_state.get("theme_mode") == "Cyberpunk Dark" else '#0f172a',
+                            family='Outfit, sans-serif'
+                        )
+                    )
+                    
+                    fig_timeline.update_traces(marker=dict(size=14, line=dict(width=2, color='white')))
+                    
+                    # Add vertical reference lines for each warning point
+                    for t in df_warn["Time"]:
+                        fig_timeline.add_vline(x=t.timestamp() * 1000, line_dash="dash", line_color="rgba(239, 68, 68, 0.5)")
+                        
+                    st.plotly_chart(fig_timeline, use_container_width=True)
+                    
+                    st.write("")
                     for w_idx, w_time in enumerate(warnings, 1):
                         st.markdown(f"- **Event {w_idx}**: Focus lost at `{w_time}`")
                     
@@ -1351,7 +1669,7 @@ def render_mcq_stage():
                 st.error(f"Failed to generate MCQ questions: {str(e)}")
                 return
 
-    if st.session_state.get("tab_switches", 0) > 0 and st.session_state.get("candidate_user_email") != "admin@test.com":
+    if st.session_state.get("tab_switches", 0) > 0:
         st.error(f"⚠️ **PROCTORING WARNING ({st.session_state.tab_switches}/3)**: A tab switch or focus loss was detected. If you switch tabs/windows again, your test will be auto-submitted and flagged for review.")
         
     st.markdown("""
@@ -1395,7 +1713,7 @@ def render_mcq_stage():
 
 @st.fragment
 def render_interview_stage():
-    if st.session_state.get("tab_switches", 0) > 0 and st.session_state.get("candidate_user_email") != "admin@test.com":
+    if st.session_state.get("tab_switches", 0) > 0:
         st.error(f"⚠️ **PROCTORING WARNING ({st.session_state.tab_switches}/3)**: A tab switch or focus loss was detected. If you switch tabs/windows again, your test will be auto-submitted and flagged for review.")
         
     # 1. Display Chat Feed Container at the TOP
@@ -1894,15 +2212,7 @@ def run_proctoring_analysis():
     if not name or not email:
         return
         
-    if email == "admin@test.com":
-        st.session_state.proctoring_report = {
-            "trust_score": 100,
-            "risk_level": "Low",
-            "violation_summary": "Admin Tester account: Proctoring bypassed.",
-            "cheating_likelihood": "Unlikely",
-            "proctoring_verdict": "Passed Proctoring"
-        }
-        return
+
         
     tab_switches = st.session_state.get("tab_switches", 0)
     warnings = st.session_state.get("proctoring_warnings", [])
@@ -1940,19 +2250,7 @@ def run_proctoring_analysis():
         }
 
 def render_proctoring_elements():
-    # If the logged-in candidate is the admin tester, bypass proctoring check completely.
-    if st.session_state.get("candidate_user_email") == "admin@test.com":
-        st.session_state.tab_switches = 0
-        st.session_state.proctoring_warnings = []
-        st.session_state.proctoring_violated = False
-        st.session_state.proctoring_report = {
-            "trust_score": 100,
-            "risk_level": "Low",
-            "violation_summary": "Admin Tester account: Proctoring bypassed.",
-            "cheating_likelihood": "Unlikely",
-            "proctoring_verdict": "Passed Proctoring"
-        }
-        return
+
 
     # Hidden proctoring button container
     st.markdown('<div class="hidden-proctor-btn">', unsafe_allow_html=True)
@@ -2007,7 +2305,8 @@ def render_proctoring_elements():
         const doc = window.parent.document;
         
         // Synchronize JS switches with python state
-        window.parent.__js_tab_switches__ = {st.session_state.tab_switches};
+        window.parent.__pending_clicks__ = window.parent.__pending_clicks__ || 0;
+        window.parent.__js_tab_switches__ = {st.session_state.tab_switches} + window.parent.__pending_clicks__;
         
         // Track mouse coordinates globally
         if (!window.parent.__mouse_move_listener_added_v3__) {{
@@ -2051,18 +2350,18 @@ def render_proctoring_elements():
             popup.innerHTML = `⚠️ ` + message;
             doc.body.appendChild(popup);
             
-            setTimeout(() => {{
+            window.parent.setTimeout(() => {{
                 popup.style.transform = 'translateY(0)';
                 popup.style.opacity = '1';
             }}, 50);
             
-            setTimeout(() => {{
+            window.parent.setTimeout(() => {{
                 popup.style.opacity = '0';
                 popup.style.transform = 'translateY(-15px)';
-                setTimeout(() => {{
+                window.parent.setTimeout(() => {{
                     popup.remove();
                 }}, 400);
-            }}, 4000);
+            }}, 2500);
         }};
         
         // Setup direct style injection on parent document to hide the proctoring trigger button
@@ -2088,7 +2387,7 @@ def render_proctoring_elements():
         // Programmatically hide the button and its container immediately
         function hideProctorBtn() {{
             const buttons = Array.from(doc.querySelectorAll('button'));
-            const triggerBtn = buttons.find(btn => btn.innerText && btn.innerText.includes('Proctoring Tab Switch Trigger'));
+            const triggerBtn = buttons.find(btn => btn.textContent && btn.textContent.includes('Proctoring Tab Switch Trigger'));
             if (triggerBtn) {{
                 triggerBtn.style.setProperty('display', 'none', 'important');
                 const container = triggerBtn.closest('[data-testid="element-container"]');
@@ -2097,6 +2396,10 @@ def render_proctoring_elements():
                     container.style.setProperty('height', '0px', 'important');
                     container.style.setProperty('margin', '0px', 'important');
                     container.style.setProperty('padding', '0px', 'important');
+                }}
+                if (window.parent.__pending_clicks__ > 0) {{
+                    window.parent.__pending_clicks__--;
+                    triggerBtn.click();
                 }}
             }}
         }}
@@ -2113,25 +2416,21 @@ def render_proctoring_elements():
         
         // Global independent trigger handler in parent document scope
         window.parent.__handle_proctor_tab_switch__ = function() {{
+            if (!window.parent.__proctoring_active__) return;
             const now = Date.now();
-            if (now - window.parent.__last_tab_switch_time__ > 2000) {{ // 2s de-bounce
+            if (now - window.parent.__last_tab_switch_time__ > 1000) {{ // 1s de-bounce for responsiveness
                 window.parent.__last_tab_switch_time__ = now;
                 
+                window.parent.__pending_clicks__ = (window.parent.__pending_clicks__ || 0) + 1;
                 window.parent.__js_tab_switches__ = (window.parent.__js_tab_switches__ || 0) + 1;
                 const switches = window.parent.__js_tab_switches__;
                 
                 if (window.parent.showCursorNotification) {{
                     if (switches <= 3) {{
-                        window.parent.showCursorNotification(`PROCTORING WARNING (${switches}/3): Focus loss detected. Keep your cursor inside the test area!`, false);
+                        window.parent.showCursorNotification(`PROCTORING WARNING (${{switches}}/3): Focus loss detected. Keep your cursor inside the test area!`, false);
                     }} else {{
                         window.parent.showCursorNotification(`TEST SUSPENDED: Auto-submitting due to proctoring violation limit.`, true);
                     }}
-                }}
-                
-                const buttons = Array.from(doc.querySelectorAll('button'));
-                const triggerBtn = buttons.find(btn => btn.innerText && btn.innerText.includes('Proctoring Tab Switch Trigger'));
-                if (triggerBtn) {{
-                    triggerBtn.click();
                 }}
             }}
         }};
@@ -2457,18 +2756,27 @@ if st.session_state.get("run_auto_apply_for_role"):
         except Exception as e:
             st.error(f"Error applying for role: {str(e)}")
 
-# ----------------- SIDEBAR HR CHATBOT -----------------
-with st.sidebar:
-    render_sidebar_chatbot()
-    if st.session_state.get("recruiter_logged_in", False):
-        st.markdown("---")
+# ----------------- TOP SCREEN HEADER CONTROLS & NAVIGATION CONTROLLER -----------------
+col_hdr_space, col_hdr_theme = st.columns([7.8, 2.2])
+with col_hdr_theme:
+    current_theme = st.session_state.get("theme_mode", "Enterprise Light")
+    theme_btn_label = "🌙 Dark Mode" if current_theme == "Enterprise Light" else "☀️ Light Mode"
+    st.markdown('<div class="theme-toggle-container">', unsafe_allow_html=True)
+    if st.button(theme_btn_label, key="header_theme_toggle_btn", use_container_width=True):
+        st.session_state.theme_mode = "Cyberpunk Dark" if current_theme == "Enterprise Light" else "Enterprise Light"
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ----------------- SIDEBAR CONTROLS -----------------
+if st.session_state.get("recruiter_logged_in", False):
+    with st.sidebar:
         st.button("🔒 Recruiter Logout", key="sidebar_logout_btn", use_container_width=True, on_click=handle_recruiter_logout)
 
 # ----------------- PAGE NAVIGATION -----------------
 if "current_page" not in st.session_state:
     st.session_state.current_page = "📋 Open Positions"
 
-nav_options = ["📋 Open Positions", "🎯 Candidate Assessment", "🔒 Recruiter Portal"]
+nav_options = ["📋 Open Positions", "🎯 Candidate Assessment", "🤖 Recruitment Assistant", "🔒 Recruiter Portal"]
 default_nav_idx = nav_options.index(st.session_state.current_page) if st.session_state.current_page in nav_options else 0
 
 st.markdown('<div class="nav-container">', unsafe_allow_html=True)
@@ -2536,6 +2844,19 @@ if page == "📋 Open Positions":
                 else:
                     st.button(f"Apply Now →", key=f"apply_btn_{role}", on_click=handle_apply_now_logged_out, args=(role,), use_container_width=True)
             st.markdown("<div style='margin-bottom: 35px;'></div>", unsafe_allow_html=True)
+    st.stop()
+
+elif page == "🤖 Recruitment Assistant":
+    st.markdown("""
+    <div class="glass-card" style="text-align: center; margin-bottom: 25px;">
+        <div class="recruit-header" style="font-size: 2.2rem; margin-bottom: 10px; background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">🤖 Recruitment Assistant & Career Guide</div>
+        <div style="color: var(--text-sub); font-size: 1.05rem;">Explore requirements, ask about hiring tracks, or check technical expectations for open positions.</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('<div class="glass-card" style="padding: 30px !important;">', unsafe_allow_html=True)
+    render_sidebar_chatbot()
+    st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
 elif page == "🔒 Recruiter Portal":
