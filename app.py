@@ -1133,139 +1133,547 @@ def format_chat_text(text):
 # ----------------- STREAMLIT FRAGMENTS FOR UI/UX ENHANCEMENTS -----------------
 
 @st.fragment
-def render_sidebar_chatbot():
-    # Helper query trigger
-    def trigger_chatbot_query(sidebar_input):
-        st.session_state.sidebar_chat_history.append({"role": "user", "content": sidebar_input})
-        try:
-            config = Config.load_config()
-            from langchain_google_genai import ChatGoogleGenerativeAI
-            from langchain_core.prompts import ChatPromptTemplate
-            
-            chat_model = ChatGoogleGenerativeAI(
-                model="gemini-2.5-flash",
-                google_api_key=config.GEMINI_API_KEY,
-                temperature=0.3
-            )
-            
-            jds_text = ""
-            for role, jd in PREDEFINED_JDS.items():
-                if role != "Custom / Write your own":
-                    jds_text += f"- Job Role: {role}\n  Description: {jd}\n\n"
-                    
-            system_prompt = f"""You are a helpful, friendly HR chatbot assistant for our recruitment platform.
-Your job is to answer user queries about open roles, requirements, and our assessment/hiring process.
+def classify_intent(user_msg: str, config) -> str:
+    """Routes user message to one of 5 intents using a fast LLM call."""
+    from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_core.prompts import ChatPromptTemplate
+    router_model = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        google_api_key=config.GEMINI_API_KEY,
+        temperature=0.0
+    )
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", """Classify the user's message into exactly ONE of these intents. Reply with only the intent word, nothing else.
 
-Here are the open roles and their details:
+Intents:
+- fit_check    : User wants to know if they are a good fit, asks about their skills vs a role, wants role recommendations, says things like "am I suitable", "match my skills", "which role for me"
+- interview_prep : User wants to practice interview questions, prepare for an interview, get sample questions, rehearse answers
+- process_guide  : User asks about how the application works, stages, MCQ, proctoring rules, retakes, how to apply
+- job_info       : User asks about a specific role's requirements, skills needed, salary, difficulty, responsibilities
+- general        : Everything else — greetings, thanks, unrelated questions
+
+Reply with ONLY one word: fit_check | interview_prep | process_guide | job_info | general"""),
+        ("human", "{msg}")
+    ])
+    try:
+        res = (prompt | router_model).invoke({"msg": user_msg})
+        intent = res.content.strip().lower().split()[0]
+        if intent in ["fit_check", "interview_prep", "process_guide", "job_info", "general"]:
+            return intent
+    except Exception:
+        pass
+    return "general"
+
+
+def get_agent_response(intent: str, user_msg: str, history: list, config, jds_text: str) -> str:
+    """Dispatches to the right specialized sub-agent system prompt based on intent."""
+    from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+
+    model = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        google_api_key=config.GEMINI_API_KEY,
+        temperature=0.4
+    )
+
+    system_prompts = {
+        "job_info": f"""You are a Job Information Specialist at AgentFlow Recruitment.
+Answer questions about specific job roles with precision and enthusiasm.
+Available roles and their descriptions:
+{jds_text}
+Rules: Be specific, mention exact skills, experience levels, and difficulty ratings. Keep answers to 3-4 sentences max.""",
+
+        "fit_check": f"""You are a Career Fit Advisor at AgentFlow Recruitment.
+Help candidates understand which roles they are best suited for.
+Available roles:
+{jds_text}
+When given a list of skills, analyze them against each role and give honest, encouraging guidance.
+Format your response clearly with role names and suitability assessment.""",
+
+        "process_guide": """You are an Application Process Guide at AgentFlow Recruitment.
+Explain the candidate assessment process clearly and helpfully.
+The process has these stages:
+1. Resume Upload & AI Screening — resume parsed, skills extracted, match score calculated (45-65% = borderline review, >65% = pass, <45% = fail)
+2. Technical MCQ — 5 customized multiple-choice questions, 60% pass threshold (3/5 correct)
+3. AI Technical Interview — 3 adaptive conversational questions with voice or text input
+4. Final Evaluation — AI assesses overall performance and sends email decision
+Proctoring: Tab switching tracked, max 3 warnings, 4th = auto-submit. Retakes possible via help desk.
+Keep answers friendly, clear, and reassuring. Max 3 sentences.""",
+
+        "interview_prep": f"""You are an Interview Coach at AgentFlow Recruitment.
+Help candidates prepare for technical interviews for our open roles.
+Available roles:
+{jds_text}
+Generate focused, realistic interview questions appropriate to the role and difficulty.
+Give encouraging, specific feedback on candidate answers. Be like a supportive coach.""",
+
+        "general": f"""You are a friendly HR Assistant at AgentFlow Recruitment.
+Help candidates with any questions about our company and hiring process.
+Available roles: {jds_text}
+Be warm, concise, and professional. If unsure, guide them to the right section of the platform."""
+    }
+
+    system_prompt = system_prompts.get(intent, system_prompts["general"])
+
+    # Build full conversation history as proper message objects
+    messages = [SystemMessage(content=system_prompt)]
+    for m in history[:-1]:  # exclude the latest user message we're about to add
+        if m["role"] == "user":
+            messages.append(HumanMessage(content=m["content"]))
+        elif m["role"] == "assistant":
+            messages.append(AIMessage(content=m["content"]))
+    messages.append(HumanMessage(content=user_msg))
+
+    try:
+        res = model.invoke(messages)
+        return res.content.strip()
+    except Exception as e:
+        return f"I encountered an issue processing your request. Please try again. ({str(e)})"
+
+
+def run_fit_check(skills_text: str, config, jds_text: str) -> list:
+    """Runs the fit-check LLM analysis and returns structured role scores."""
+    import json as _json
+    from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_core.prompts import ChatPromptTemplate
+
+    model = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        google_api_key=config.GEMINI_API_KEY,
+        temperature=0.1
+    )
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", f"""You are a career fit analyzer. Given a candidate's skill list, analyze how well they match each available job role.
+Available roles:
 {jds_text}
 
-Here is our candidate assessment process and rules:
-1. Candidate Assessment Stages:
-   - Stage 1: Resume Upload & Screening. Parses resume, analyzes skill gaps, and checks eligibility.
-   - Stage 2: Technical MCQ Screening. 5 technical multiple-choice questions customized to the candidate's resume and job role. Passing score is 60% (at least 3 out of 5 correct). Failing disqualifies the candidate.
-   - Stage 3: Interactive Technical Interview. Adaptive conversational AI interview (3 questions). Supports voice recording (automatic transcription) or text response. An audio replay button is available to listen to the interviewer's question.
-2. AI Proctoring & Security Rules:
-   - Tab switching or losing browser window focus (blur) is strictly tracked during MCQ and Interview stages.
-   - Immediate warnings are shown on screen. A maximum of 3 warnings is allowed.
-   - On the 4th violation, the test is automatically submitted and flagged, and the candidate is disqualified.
-   - Copy-pasting is strictly blocked/prohibited.
-3. Help Desk & Retakes:
-   - Candidates facing issues (system error, browser freeze, accidental exit) can submit a ticket in the 'Profile & Help Center' tab.
-   - An AI Support Agent or Recruiter reviews tickets. If approved, candidates can reset and restart their assessment session.
+Return ONLY a valid JSON array like this (no markdown, no explanation):
+[
+  {{
+    "role": "Role Name",
+    "score": 75,
+    "matched_skills": ["skill1", "skill2"],
+    "missing_skills": ["skill3"],
+    "recommendation": "One sentence of encouragement and advice."
+  }}
+]
+Score 0-100. Be honest but encouraging."""),
+        ("human", "Candidate Skills: {skills}")
+    ])
+    try:
+        res = (prompt | model).invoke({"skills": skills_text})
+        content = res.content.strip()
+        # Strip markdown code fences if present
+        if content.startswith("```"):
+            content = content.split("```")[1]
+            if content.startswith("json"):
+                content = content[4:]
+        return _json.loads(content.strip())
+    except Exception:
+        return []
 
-Rules for your responses:
-1. Base your answers strictly on the open roles and process rules listed above.
-2. If asked about a role not listed, suggest selecting 'Custom / Write your own' in the Candidate Assessment tab.
-3. Keep responses helpful, direct, and professional (max 2-3 sentences).
-"""
-            history_str = ""
-            for m in st.session_state.sidebar_chat_history[:-1]:
-                role_name = "Assistant" if m["role"] == "assistant" else "User"
-                history_str += f"{role_name}: {m['content']}\n"
-            
-            prompt_tpl = ChatPromptTemplate.from_messages([
-                ("system", system_prompt),
-                ("human", "Conversation History:\n{history}\n\nUser Question: {input_text}")
-            ])
-            
-            chain = prompt_tpl | chat_model
-            response = chain.invoke({
-                "history": history_str,
-                "input_text": sidebar_input
-            })
-            
-            bot_text = response.content.strip()
-            st.session_state.sidebar_chat_history.append({"role": "assistant", "content": bot_text})
-        except Exception as e:
-            st.session_state.sidebar_chat_history.append({"role": "assistant", "content": f"Assistant error: {str(e)}"})
-        st.rerun()
 
-    # Clear history button next to heading
-    col_lbl, col_clr = st.columns([7.8, 2.2])
+def generate_prep_questions(role: str, config, jds_text: str) -> list:
+    """Generates 5 tailored interview practice questions for a role."""
+    import json as _json
+    from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_core.prompts import ChatPromptTemplate
+
+    model = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        google_api_key=config.GEMINI_API_KEY,
+        temperature=0.5
+    )
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", f"""You are a senior technical interviewer. Generate exactly 5 realistic interview practice questions for the given role.
+Available role descriptions:
+{jds_text}
+Return ONLY a valid JSON array of strings, no markdown:
+["Question 1?", "Question 2?", "Question 3?", "Question 4?", "Question 5?"]"""),
+        ("human", "Generate 5 interview questions for the role: {role}")
+    ])
+    try:
+        res = (prompt | model).invoke({"role": role})
+        content = res.content.strip()
+        if content.startswith("```"):
+            content = content.split("```")[1]
+            if content.startswith("json"):
+                content = content[4:]
+        questions = _json.loads(content.strip())
+        return questions[:5]
+    except Exception:
+        return [
+            f"Tell me about your experience relevant to the {role} role.",
+            "Describe a challenging technical problem you solved recently.",
+            "How do you approach learning new technologies?",
+            "Walk me through a project you are most proud of.",
+            "What are your strengths and areas for improvement?"
+        ]
+
+
+def get_answer_feedback(question: str, answer: str, role: str, config) -> str:
+    """Returns AI feedback for a single interview answer."""
+    from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_core.messages import HumanMessage, SystemMessage
+
+    model = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        google_api_key=config.GEMINI_API_KEY,
+        temperature=0.4
+    )
+    messages = [
+        SystemMessage(content=f"""You are a supportive interview coach evaluating practice answers for the {role} role.
+Give specific, constructive feedback in 2-3 sentences:
+1. What was good about the answer
+2. What could be improved or added
+Be encouraging and practical."""),
+        HumanMessage(content=f"Interview Question: {question}\n\nCandidate's Answer: {answer}\n\nProvide coaching feedback:")
+    ]
+    try:
+        res = model.invoke(messages)
+        return res.content.strip()
+    except Exception:
+        return "Good attempt! Try to add more specific examples and technical details in your answer."
+
+
+def render_sidebar_chatbot():
+    config = Config.load_config()
+
+    jds_text = ""
+    for role, jd in PREDEFINED_JDS.items():
+        if role != "Custom / Write your own":
+            jds_text += f"Role: {role}\nDescription: {jd}\n\n"
+
+    # ── Header row ──────────────────────────────────────────────────────────────
+    col_lbl, col_mode, col_clr = st.columns([4, 4, 2])
     with col_lbl:
-        st.markdown("### 🤖 Recruitment Assistant")
+        mode = st.session_state.assistant_mode
+        mode_labels = {"chat": "🤖 Assistant", "fit_check": "🎯 Fit Advisor", "interview_prep": "🧠 Interview Prep"}
+        st.markdown(f"### {mode_labels.get(mode, '🤖 Assistant')}")
+    with col_mode:
+        if st.session_state.assistant_mode != "chat":
+            if st.button("↩️ Back to Chat", key="back_to_chat_btn", use_container_width=True):
+                st.session_state.assistant_mode = "chat"
+                st.session_state.fit_results = None
+                st.session_state.fit_skills_input = ""
+                st.session_state.prep_questions = []
+                st.session_state.prep_current_q = 0
+                st.session_state.prep_answers = {}
+                st.session_state.prep_feedback = {}
+                st.session_state.prep_role = ""
+                st.rerun()
     with col_clr:
-        if st.session_state.sidebar_chat_history:
+        if st.session_state.sidebar_chat_history and st.session_state.assistant_mode == "chat":
             if st.button("🗑️ Clear", key="clear_chat_history_btn", use_container_width=True):
-                st.session_state.sidebar_chat_history = []
+                st.session_state.sidebar_chat_history = [
+                    {"role": "assistant", "content": "Hello! I'm your **AI Recruitment Assistant** 👋\n\nI can help you with:\n- 🔍 **Job role info** — requirements, skills, difficulty\n- 🎯 **Fit check** — find which role suits your profile best\n- 📋 **Process guide** — how the assessment works\n- 🧠 **Interview prep** — practice questions with AI feedback\n\nWhat would you like to explore today?"}
+                ]
+                st.session_state.assistant_mode = "chat"
                 st.rerun()
 
-    st.write("Ask about open roles and job requirements:")
+    # ═══════════════════════════════════════════════════════════════════════════
+    # MODE: FIT CHECK
+    # ═══════════════════════════════════════════════════════════════════════════
+    if st.session_state.assistant_mode == "fit_check":
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(16,185,129,0.08));
+                    border: 1px solid rgba(59,130,246,0.2); border-radius: 12px; padding: 18px; margin-bottom: 18px;">
+            <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-main); margin-bottom: 6px;">🎯 Skill-Match Fit Advisor</div>
+            <div style="color: var(--text-sub); font-size: 0.9rem;">Enter your skills below and I'll score your fit against every open role and recommend the best match.</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    # Render chatbot transcript in scrollable container
-    with st.container(height=260):
+        with st.form("fit_check_form", clear_on_submit=False):
+            skills_input = st.text_area(
+                "Your Skills",
+                value=st.session_state.fit_skills_input,
+                placeholder="e.g. Python, FastAPI, LangChain, Machine Learning, React, SQL, Docker...",
+                height=100,
+                key="fit_skills_textarea",
+                label_visibility="collapsed"
+            )
+            analyze_btn = st.form_submit_button("🔍 Analyze My Fit", use_container_width=True)
+
+        if analyze_btn and skills_input.strip():
+            st.session_state.fit_skills_input = skills_input.strip()
+            with st.spinner("Analyzing your profile against all open roles..."):
+                results = run_fit_check(skills_input.strip(), config, jds_text)
+                st.session_state.fit_results = results
+
+        if st.session_state.fit_results:
+            results = sorted(st.session_state.fit_results, key=lambda x: x.get("score", 0), reverse=True)
+            st.markdown("#### 📊 Your Role Match Results")
+            for r in results:
+                score = r.get("score", 0)
+                if score >= 75:
+                    bar_color = "#10b981"
+                    badge = "🟢 Strong Match"
+                elif score >= 50:
+                    bar_color = "#f59e0b"
+                    badge = "🟡 Partial Match"
+                else:
+                    bar_color = "#ef4444"
+                    badge = "🔴 Skill Gap"
+
+                matched = ", ".join(r.get("matched_skills", [])[:6]) or "—"
+                missing = ", ".join(r.get("missing_skills", [])[:5]) or "None"
+                rec = r.get("recommendation", "")
+
+                st.markdown(f"""
+                <div style="border: 1px solid {bar_color}33; border-left: 5px solid {bar_color};
+                            border-radius: 10px; padding: 16px; margin-bottom: 14px;
+                            background: {bar_color}08;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div style="font-weight: 700; font-size: 1rem; color: var(--text-main);">{r.get('role','')}</div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 0.8rem; color: {bar_color}; font-weight: 600;">{badge}</span>
+                            <span style="font-size: 1.4rem; font-weight: 800; color: {bar_color};">{score}%</span>
+                        </div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.08); border-radius: 6px; height: 8px; margin-bottom: 12px;">
+                        <div style="width: {score}%; height: 100%; background: {bar_color}; border-radius: 6px;"></div>
+                    </div>
+                    <div style="font-size: 0.82rem; color: var(--text-sub); margin-bottom: 6px;">
+                        ✅ <strong>Matched:</strong> {matched}
+                    </div>
+                    <div style="font-size: 0.82rem; color: var(--text-sub); margin-bottom: 8px;">
+                        📚 <strong>To learn:</strong> {missing}
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-main); font-style: italic; border-top: 1px solid {bar_color}22; padding-top: 8px;">
+                        💡 {rec}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # Best fit CTA
+            best = results[0]
+            st.success(f"**🏆 Best match for you:** {best.get('role')} ({best.get('score')}% fit) — head to the **Open Positions** tab to apply!")
+        return
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # MODE: INTERVIEW PREP
+    # ═══════════════════════════════════════════════════════════════════════════
+    if st.session_state.assistant_mode == "interview_prep":
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.08));
+                    border: 1px solid rgba(139,92,246,0.2); border-radius: 12px; padding: 18px; margin-bottom: 18px;">
+            <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-main); margin-bottom: 6px;">🧠 Interview Prep Practice</div>
+            <div style="color: var(--text-sub); font-size: 0.9rem;">Practice with AI-generated questions and get per-answer coaching feedback.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Step 1: Role selection
+        if not st.session_state.prep_role:
+            open_roles = [r for r in PREDEFINED_JDS.keys() if r != "Custom / Write your own"]
+            with st.form("prep_role_form"):
+                selected = st.selectbox("Select the role you're preparing for:", open_roles, key="prep_role_selector")
+                if st.form_submit_button("🚀 Start Practice Session", use_container_width=True):
+                    with st.spinner(f"Generating 5 tailored questions for {selected}..."):
+                        questions = generate_prep_questions(selected, config, jds_text)
+                    st.session_state.prep_role = selected
+                    st.session_state.prep_questions = questions
+                    st.session_state.prep_current_q = 0
+                    st.session_state.prep_answers = {}
+                    st.session_state.prep_feedback = {}
+                    st.rerun()
+            return
+
+        questions = st.session_state.prep_questions
+        current_q = st.session_state.prep_current_q
+        total_q = len(questions)
+        role = st.session_state.prep_role
+
+        # Progress bar
+        progress = current_q / total_q if total_q > 0 else 0
+        st.markdown(f"""
+        <div style="margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-sub); margin-bottom: 6px;">
+                <span>Preparing for: <strong style="color: var(--text-main);">{role}</strong></span>
+                <span>Question {min(current_q+1, total_q)} of {total_q}</span>
+            </div>
+            <div style="background: rgba(0,0,0,0.1); border-radius: 6px; height: 6px;">
+                <div style="width: {int(progress*100)}%; height: 100%; background: #8b5cf6; border-radius: 6px; transition: width 0.4s;"></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Show all answered questions with feedback
+        for i in range(current_q):
+            q_text = questions[i]
+            ans = st.session_state.prep_answers.get(i, "")
+            fb = st.session_state.prep_feedback.get(i, "")
+            with st.expander(f"✅ Q{i+1}: {q_text[:60]}...", expanded=False):
+                st.markdown(f"**Your answer:** {ans}")
+                if fb:
+                    st.markdown(f"""
+                    <div style="background: rgba(139,92,246,0.08); border-left: 4px solid #8b5cf6;
+                                border-radius: 6px; padding: 12px; margin-top: 8px; font-size: 0.9rem;">
+                        🧑‍🏫 <strong>Coach Feedback:</strong> {fb}
+                    </div>
+                    """, unsafe_allow_html=True)
+
+        # Current question
+        if current_q < total_q:
+            q_text = questions[current_q]
+            st.markdown(f"""
+            <div style="background: rgba(139,92,246,0.06); border: 1px solid rgba(139,92,246,0.25);
+                        border-radius: 12px; padding: 18px; margin-bottom: 16px;">
+                <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;
+                            color: #8b5cf6; font-weight: 700; margin-bottom: 8px;">Question {current_q + 1}</div>
+                <div style="font-size: 1.02rem; color: var(--text-main); font-weight: 500; line-height: 1.5;">{q_text}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            with st.form(f"prep_answer_form_{current_q}", clear_on_submit=True):
+                user_ans = st.text_area(
+                    "Your Answer",
+                    placeholder="Type your answer here — be as detailed as you can...",
+                    height=120,
+                    label_visibility="collapsed",
+                    key=f"prep_ans_input_{current_q}"
+                )
+                submitted = st.form_submit_button("Submit Answer & Get Feedback ➜", use_container_width=True)
+
+            if submitted and user_ans.strip():
+                with st.spinner("Getting coaching feedback..."):
+                    feedback = get_answer_feedback(q_text, user_ans.strip(), role, config)
+                st.session_state.prep_answers[current_q] = user_ans.strip()
+                st.session_state.prep_feedback[current_q] = feedback
+                st.session_state.prep_current_q += 1
+                st.rerun()
+
+        else:
+            # All questions answered — show final summary
+            st.success(f"🎉 **Practice session complete!** You answered all {total_q} questions for **{role}**.")
+            st.markdown("#### 📋 Overall Performance Summary")
+            total_score_hint = "Keep practising!" if total_q > 0 else ""
+            for i, q in enumerate(questions):
+                ans = st.session_state.prep_answers.get(i, "")
+                fb = st.session_state.prep_feedback.get(i, "")
+                st.markdown(f"""
+                <div style="border: 1px solid rgba(139,92,246,0.2); border-radius: 10px;
+                            padding: 16px; margin-bottom: 12px;">
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 8px;">Q{i+1}. {q}</div>
+                    <div style="color: var(--text-sub); font-size: 0.88rem; margin-bottom: 8px;">
+                        <strong>Your answer:</strong> {ans}
+                    </div>
+                    <div style="background: rgba(139,92,246,0.06); border-left: 3px solid #8b5cf6;
+                                padding: 10px; border-radius: 4px; font-size: 0.88rem; color: var(--text-main);">
+                        🧑‍🏫 {fb}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            if st.button("🔄 Practice Again (New Questions)", use_container_width=True, key="prep_restart_btn"):
+                with st.spinner("Generating fresh questions..."):
+                    new_qs = generate_prep_questions(role, config, jds_text)
+                st.session_state.prep_questions = new_qs
+                st.session_state.prep_current_q = 0
+                st.session_state.prep_answers = {}
+                st.session_state.prep_feedback = {}
+                st.rerun()
+        return
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # MODE: MAIN CHAT (Intent-Routed)
+    # ═══════════════════════════════════════════════════════════════════════════
+    def trigger_chatbot_query(user_input_text):
+        st.session_state.sidebar_chat_history.append({"role": "user", "content": user_input_text})
+        try:
+            intent = classify_intent(user_input_text, config)
+
+            # Special intents that switch modes
+            if intent == "fit_check":
+                st.session_state.sidebar_chat_history.append({
+                    "role": "assistant",
+                    "content": "🎯 **Switching to Fit Advisor mode!** Enter your skills and I'll score your match against every open role."
+                })
+                st.session_state.assistant_mode = "fit_check"
+                return
+            if intent == "interview_prep":
+                st.session_state.sidebar_chat_history.append({
+                    "role": "assistant",
+                    "content": "🧠 **Switching to Interview Prep mode!** Select a role and start practicing with AI-generated questions and coaching feedback."
+                })
+                st.session_state.assistant_mode = "interview_prep"
+                return
+
+            # Inline chat intents (job_info, process_guide, general)
+            response = get_agent_response(
+                intent=intent,
+                user_msg=user_input_text,
+                history=st.session_state.sidebar_chat_history,
+                config=config,
+                jds_text=jds_text
+            )
+            st.session_state.sidebar_chat_history.append({"role": "assistant", "content": response})
+        except Exception as e:
+            st.session_state.sidebar_chat_history.append({"role": "assistant", "content": f"Sorry, I ran into an issue: {str(e)}"})
+
+    # Chat transcript
+    with st.container(height=300):
         if not st.session_state.sidebar_chat_history:
-            st.markdown("<p style='color: var(--text-sub); font-style: italic; font-size: 0.9rem;'>No messages yet. Ask me anything about open positions!</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color: var(--text-sub); font-style: italic; font-size: 0.9rem;'>No messages yet. Ask me anything!</p>", unsafe_allow_html=True)
         for msg in st.session_state.sidebar_chat_history:
             avatar = "🧑" if msg["role"] == "user" else "🤖"
             with st.chat_message(msg["role"], avatar=avatar):
-                st.write(msg["content"])
+                st.markdown(msg["content"])
 
-    # Render quick tags if chat is empty
-    if not st.session_state.sidebar_chat_history:
-        st.write("💡 **Quick Questions:**")
-        col_t1, col_t2, col_t3 = st.columns(3)
-        with col_t1:
-            if st.button("💼 View Positions", key="qt_open_positions", use_container_width=True):
+    # Quick action buttons when chat is fresh
+    if len(st.session_state.sidebar_chat_history) <= 1:
+        st.markdown("**⚡ Quick Actions:**")
+        col1, col2 = st.columns(2)
+        col3, col4 = st.columns(2)
+        with col1:
+            if st.button("🎯 Check My Fit", key="qt_fit_check", use_container_width=True):
+                st.session_state.assistant_mode = "fit_check"
+                st.rerun()
+        with col2:
+            if st.button("🧠 Prep for Interview", key="qt_prep", use_container_width=True):
+                st.session_state.assistant_mode = "interview_prep"
+                st.rerun()
+        with col3:
+            if st.button("💼 Open Roles", key="qt_roles", use_container_width=True):
                 with st.spinner("Thinking..."):
-                    trigger_chatbot_query("What open positions are available?")
-        with col_t2:
-            if st.button("📝 How to apply?", key="qt_apply_flow", use_container_width=True):
+                    trigger_chatbot_query("What open positions are available and what are the requirements?")
+                st.rerun()
+        with col4:
+            if st.button("📋 How to Apply", key="qt_apply", use_container_width=True):
                 with st.spinner("Thinking..."):
-                    trigger_chatbot_query("How do I apply for a role?")
-        with col_t3:
-            if st.button("🛡️ Proctoring Rules", key="qt_proctoring_rules", use_container_width=True):
-                with st.spinner("Thinking..."):
-                    trigger_chatbot_query("What are the test proctoring rules?")
+                    trigger_chatbot_query("How does the application and assessment process work?")
+                st.rerun()
     else:
-        # Show suggested follow-up questions
-        st.write("🔍 **Suggested Follow-up:**")
-        col_s1, col_s2 = st.columns(2)
-        with col_s1:
-            if st.button("🛠️ AI/ML Engineer skills?", key="suggest_aiml_skills", use_container_width=True):
-                with st.spinner("Thinking..."):
-                    trigger_chatbot_query("What skills are required for the AI/ML Engineer role?")
-        with col_s2:
-            if st.button("💻 Frontend expectations?", key="suggest_frontend_expectations", use_container_width=True):
-                with st.spinner("Thinking..."):
-                    trigger_chatbot_query("What are the expectations for the Frontend Engineer position?")
+        # Contextual follow-ups
+        st.markdown("**🔍 Suggested:**")
+        s1, s2 = st.columns(2)
+        with s1:
+            if st.button("🎯 Check My Fit", key="sug_fit_check", use_container_width=True):
+                st.session_state.assistant_mode = "fit_check"
+                st.rerun()
+        with s2:
+            if st.button("🧠 Practice Interview", key="sug_prep", use_container_width=True):
+                st.session_state.assistant_mode = "interview_prep"
+                st.rerun()
 
-    # Render clean inline text input box using form
+    # Message input
     with st.form("sidebar_chat_inline_form", clear_on_submit=True):
         col_inp, col_btn = st.columns([8.2, 1.8])
         with col_inp:
             user_input = st.text_input(
-                "Ask about roles...",
-                placeholder="Ask about requirements, roles, or difficulties...",
+                "Ask anything...",
+                placeholder="e.g. What skills do I need for AI/ML Engineer?",
                 label_visibility="collapsed",
                 key="chatbot_input_text_box"
             )
         with col_btn:
-            submitted = st.form_submit_button("Send", use_container_width=True)
+            submitted = st.form_submit_button("Send ➤", use_container_width=True)
 
     if submitted and user_input.strip():
         with st.spinner("Thinking..."):
             trigger_chatbot_query(user_input.strip())
+        st.rerun()
+
+
 
 
 def render_recruiter_analytics():
@@ -3039,8 +3447,26 @@ if "call_sent" not in st.session_state:
     st.session_state.call_sent = False
 if "sidebar_chat_history" not in st.session_state:
     st.session_state.sidebar_chat_history = [
-        {"role": "assistant", "content": "Hello! I am your Recruitment Assistant. Ask me about available job roles, requirements, or what profiles we look for."}
+        {"role": "assistant", "content": "Hello! I'm your **AI Recruitment Assistant** 👋\n\nI can help you with:\n- 🔍 **Job role info** — requirements, skills, difficulty\n- 🎯 **Fit check** — find which role suits your profile best\n- 📋 **Process guide** — how the assessment works\n- 🧠 **Interview prep** — practice questions with AI feedback\n\nWhat would you like to explore today?"}
     ]
+
+# Assistant enhanced mode tracking
+if "assistant_mode" not in st.session_state:
+    st.session_state.assistant_mode = "chat"   # chat | fit_check | interview_prep
+if "fit_skills_input" not in st.session_state:
+    st.session_state.fit_skills_input = ""
+if "fit_results" not in st.session_state:
+    st.session_state.fit_results = None
+if "prep_role" not in st.session_state:
+    st.session_state.prep_role = ""
+if "prep_questions" not in st.session_state:
+    st.session_state.prep_questions = []
+if "prep_current_q" not in st.session_state:
+    st.session_state.prep_current_q = 0
+if "prep_answers" not in st.session_state:
+    st.session_state.prep_answers = {}
+if "prep_feedback" not in st.session_state:
+    st.session_state.prep_feedback = {}
 
 if "auth_mode" not in st.session_state:
     st.session_state.auth_mode = "🔐 Log In to My Profile"
