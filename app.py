@@ -898,6 +898,82 @@ st.markdown("""
         margin: 0px !important;
         border: none !important;
     }
+
+    /* Mobile responsive overrides */
+    @media (max-width: 768px) {
+        /* Main Navigation pills stacking */
+        div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] > div[role="radiogroup"] {
+            flex-direction: column !important;
+            border-radius: 20px !important;
+            padding: 12px 6px !important;
+            gap: 12px !important;
+        }
+        div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label {
+            padding: 10px 15px !important;
+            font-size: 0.95rem !important;
+            border-radius: 12px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        
+        /* Stepper responsive stacking */
+        .stepper-wrapper {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 16px !important;
+            padding: 10px !important;
+        }
+        .stepper-wrapper::before {
+            display: none !important;
+        }
+        .stepper-item {
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 12px !important;
+            width: 100% !important;
+            flex: unset !important;
+        }
+        .step-name {
+            text-align: left !important;
+            margin-top: 0px !important;
+            font-size: 0.95rem !important;
+        }
+        
+        /* Header typography responsiveness */
+        .recruit-header {
+            font-size: 1.8rem !important;
+            text-align: center !important;
+        }
+        .recruit-sub {
+            font-size: 0.95rem !important;
+            text-align: center !important;
+            margin-bottom: 20px !important;
+        }
+        
+        /* Theme toggle adjustments on mobile */
+        .theme-toggle-container {
+            justify-content: center !important;
+            margin-top: 5px !important;
+            margin-bottom: 15px !important;
+            width: 100% !important;
+        }
+    }
+    
+    @media (max-width: 640px) {
+        div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] > div[role="radiogroup"] {
+            flex-direction: column !important;
+            border-radius: 20px !important;
+            padding: 10px 6px !important;
+            gap: 10px !important;
+        }
+        div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label {
+            padding: 8px 12px !important;
+            font-size: 0.88rem !important;
+            border-radius: 12px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -3443,8 +3519,10 @@ def render_candidate_hub_portal():
                                 email_agent = EmailAgent()
                                 email_agent.run(
                                     recipient_email=st.session_state.candidate_email,
+                                    candidate_name=st.session_state.candidate_name,
                                     job_role=st.session_state.job_role,
-                                    feedback_summary=eval_res.summary_for_candidate
+                                    feedback_summary=eval_res.summary_for_candidate,
+                                    is_selected=True
                                 )
                                 st.session_state.email_sent = True
                             except:
@@ -3457,6 +3535,25 @@ def render_candidate_hub_portal():
                 if eval_res:
                     st.write("**Evaluation Feedback Summary:**")
                     st.warning(eval_res.summary_for_candidate)
+                    
+                    # SMTP Email dispatch for rejection
+                    if not st.session_state.email_sent:
+                        if st.session_state.candidate_email == "admin@test.com":
+                            st.session_state.email_sent = True
+                        else:
+                            with st.spinner("Sending update email..."):
+                                try:
+                                    email_agent = EmailAgent()
+                                    email_agent.run(
+                                        recipient_email=st.session_state.candidate_email,
+                                        candidate_name=st.session_state.candidate_name,
+                                        job_role=st.session_state.job_role,
+                                        feedback_summary=eval_res.summary_for_candidate,
+                                        is_selected=False
+                                    )
+                                    st.session_state.email_sent = True
+                                except:
+                                    st.session_state.email_sent = True
                     
         elif stage == "screening_failed":
             st.markdown(f"""
