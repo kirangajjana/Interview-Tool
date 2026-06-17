@@ -1310,29 +1310,7 @@ Return ONLY a valid JSON array of strings, no markdown:
         ]
 
 
-def get_answer_feedback(question: str, answer: str, role: str, config) -> str:
-    """Returns AI feedback for a single interview answer."""
-    from langchain_google_genai import ChatGoogleGenerativeAI
-    from langchain_core.messages import HumanMessage, SystemMessage
 
-    model = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        google_api_key=config.GEMINI_API_KEY,
-        temperature=0.4
-    )
-    messages = [
-        SystemMessage(content=f"""You are a supportive interview coach evaluating practice answers for the {role} role.
-Give specific, constructive feedback in 2-3 sentences:
-1. What was good about the answer
-2. What could be improved or added
-Be encouraging and practical."""),
-        HumanMessage(content=f"Interview Question: {question}\n\nCandidate's Answer: {answer}\n\nProvide coaching feedback:")
-    ]
-    try:
-        res = model.invoke(messages)
-        return res.content.strip()
-    except Exception:
-        return "Good attempt! Try to add more specific examples and technical details in your answer."
 
 
 def render_sidebar_chatbot():
@@ -1358,7 +1336,6 @@ def render_sidebar_chatbot():
                 st.session_state.prep_questions = []
                 st.session_state.prep_current_q = 0
                 st.session_state.prep_answers = {}
-                st.session_state.prep_feedback = {}
                 st.session_state.prep_role = ""
                 st.rerun()
     with col_clr:
@@ -1457,7 +1434,7 @@ def render_sidebar_chatbot():
         <div style="background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.08));
                     border: 1px solid rgba(139,92,246,0.2); border-radius: 12px; padding: 18px; margin-bottom: 18px;">
             <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-main); margin-bottom: 6px;">🧠 Interview Prep Practice</div>
-            <div style="color: var(--text-sub); font-size: 0.9rem;">Practice with AI-generated questions and get per-answer coaching feedback.</div>
+            <div style="color: var(--text-sub); font-size: 0.9rem;">Practice with AI-generated questions. Answer all 5 and review your responses at the end.</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1473,7 +1450,6 @@ def render_sidebar_chatbot():
                     st.session_state.prep_questions = questions
                     st.session_state.prep_current_q = 0
                     st.session_state.prep_answers = {}
-                    st.session_state.prep_feedback = {}
                     st.rerun()
             return
 
@@ -1496,20 +1472,12 @@ def render_sidebar_chatbot():
         </div>
         """, unsafe_allow_html=True)
 
-        # Show all answered questions with feedback
+        # Show all answered questions (no feedback)
         for i in range(current_q):
             q_text = questions[i]
             ans = st.session_state.prep_answers.get(i, "")
-            fb = st.session_state.prep_feedback.get(i, "")
             with st.expander(f"✅ Q{i+1}: {q_text[:60]}...", expanded=False):
                 st.markdown(f"**Your answer:** {ans}")
-                if fb:
-                    st.markdown(f"""
-                    <div style="background: rgba(139,92,246,0.08); border-left: 4px solid #8b5cf6;
-                                border-radius: 6px; padding: 12px; margin-top: 8px; font-size: 0.9rem;">
-                        🧑‍🏫 <strong>Coach Feedback:</strong> {fb}
-                    </div>
-                    """, unsafe_allow_html=True)
 
         # Current question
         if current_q < total_q:
@@ -1531,34 +1499,24 @@ def render_sidebar_chatbot():
                     label_visibility="collapsed",
                     key=f"prep_ans_input_{current_q}"
                 )
-                submitted = st.form_submit_button("Submit Answer & Get Feedback ➜", use_container_width=True)
+                submitted = st.form_submit_button("Submit Answer ➜", use_container_width=True)
 
             if submitted and user_ans.strip():
-                with st.spinner("Getting coaching feedback..."):
-                    feedback = get_answer_feedback(q_text, user_ans.strip(), role, config)
                 st.session_state.prep_answers[current_q] = user_ans.strip()
-                st.session_state.prep_feedback[current_q] = feedback
                 st.session_state.prep_current_q += 1
                 st.rerun()
 
         else:
-            # All questions answered — show final summary
             st.success(f"🎉 **Practice session complete!** You answered all {total_q} questions for **{role}**.")
-            st.markdown("#### 📋 Overall Performance Summary")
-            total_score_hint = "Keep practising!" if total_q > 0 else ""
+            st.markdown("#### 📋 Your Answers")
             for i, q in enumerate(questions):
                 ans = st.session_state.prep_answers.get(i, "")
-                fb = st.session_state.prep_feedback.get(i, "")
                 st.markdown(f"""
                 <div style="border: 1px solid rgba(139,92,246,0.2); border-radius: 10px;
                             padding: 16px; margin-bottom: 12px;">
                     <div style="font-weight: 700; color: var(--text-main); margin-bottom: 8px;">Q{i+1}. {q}</div>
-                    <div style="color: var(--text-sub); font-size: 0.88rem; margin-bottom: 8px;">
+                    <div style="color: var(--text-sub); font-size: 0.88rem;">
                         <strong>Your answer:</strong> {ans}
-                    </div>
-                    <div style="background: rgba(139,92,246,0.06); border-left: 3px solid #8b5cf6;
-                                padding: 10px; border-radius: 4px; font-size: 0.88rem; color: var(--text-main);">
-                        🧑‍🏫 {fb}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -1569,7 +1527,6 @@ def render_sidebar_chatbot():
                 st.session_state.prep_questions = new_qs
                 st.session_state.prep_current_q = 0
                 st.session_state.prep_answers = {}
-                st.session_state.prep_feedback = {}
                 st.rerun()
         return
 
