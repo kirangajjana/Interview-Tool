@@ -398,7 +398,22 @@ st.markdown("""
         backdrop-filter: blur(20px) !important;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
         width: 100% !important;
-        overflow: hidden !important;
+        overflow-x: auto !important; /* Enable swipable horizontal scrolling on small screens */
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important; /* Hide scrollbar for Firefox */
+        -ms-overflow-style: none !important; /* Hide scrollbar for IE/Edge */
+    }
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] > div[role="radiogroup"]::-webkit-scrollbar {
+        display: none !important; /* Hide scrollbar for Webkit */
+        height: 0px !important;
+        width: 0px !important;
+        background: transparent !important;
+    }
+    div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] div[role="radiogroup"] > div {
+        flex: 1 1 auto !important;
+        display: flex !important;
+        justify-content: center !important;
+        min-width: 0 !important;
     }
     
     /* Hide the radio button circles visually */
@@ -475,7 +490,22 @@ st.markdown("""
         backdrop-filter: blur(20px) !important;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
         width: 100% !important;
-        overflow: hidden !important;
+        overflow-x: auto !important; /* Enable swipable horizontal scrolling */
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+    }
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] > div[role="radiogroup"]::-webkit-scrollbar {
+        display: none !important;
+        height: 0px !important;
+        width: 0px !important;
+        background: transparent !important;
+    }
+    div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] div[role="radiogroup"] > div {
+        flex: 1 1 auto !important;
+        display: flex !important;
+        justify-content: center !important;
+        min-width: 0 !important;
     }
     div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label > div:first-child {
         opacity: 0 !important;
@@ -901,19 +931,18 @@ st.markdown("""
 
     /* Mobile responsive overrides */
     @media (max-width: 768px) {
-        /* Main Navigation pills stacking */
+        /* Main Navigation pills sizing adjustments (keep horizontal scroll) */
         div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] > div[role="radiogroup"] {
-            flex-direction: column !important;
-            border-radius: 20px !important;
-            padding: 12px 6px !important;
+            justify-content: flex-start !important;
             gap: 12px !important;
         }
         div.element-container:has(.nav-container) + div.element-container div[data-testid="stRadio"] label {
-            padding: 10px 15px !important;
-            font-size: 0.95rem !important;
-            border-radius: 12px !important;
-            width: 100% !important;
-            box-sizing: border-box !important;
+            padding: 8px 20px !important;
+            font-size: 0.9rem !important;
+            border-radius: 100px !important;
+            flex: 0 0 auto !important;
+            width: auto !important;
+            max-width: none !important;
         }
         
         /* Stepper responsive stacking */
@@ -960,18 +989,18 @@ st.markdown("""
     }
     
     @media (max-width: 640px) {
+        /* Auth Navigation pills sizing adjustments (keep horizontal scroll) */
         div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] > div[role="radiogroup"] {
-            flex-direction: column !important;
-            border-radius: 20px !important;
-            padding: 10px 6px !important;
+            justify-content: flex-start !important;
             gap: 10px !important;
         }
         div.element-container:has(.auth-nav-container) + div.element-container div[data-testid="stRadio"] label {
-            padding: 8px 12px !important;
-            font-size: 0.88rem !important;
-            border-radius: 12px !important;
-            width: 100% !important;
-            box-sizing: border-box !important;
+            padding: 6px 16px !important;
+            font-size: 0.85rem !important;
+            border-radius: 100px !important;
+            flex: 0 0 auto !important;
+            width: auto !important;
+            max-width: none !important;
         }
     }
 </style>
