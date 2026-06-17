@@ -37,8 +37,27 @@ from src.agents.candidate_agents.repeat_agent import RepeatAgent
 from src.agents.recruiter_agents.job_agent import JobAgent
 from src.agents.candidate_agents.proctoring_agent.proctoring_agent import ProctoringAgent
 
+def validate_stage_transition(current_stage: str, target_stage: str) -> bool:
+    """Enforces strict state pipeline transitions for candidates."""
+    valid_transitions = {
+        "upload": ["proctoring_instruction", "screening_failed", "screening_review"],
+        "screening_review": ["proctoring_instruction", "screening_failed"],
+        "screening_failed": ["upload"],
+        "proctoring_instruction": ["mcq", "upload"],
+        "mcq": ["mcq_passed_screen", "mcq_failed_screen", "upload"],
+        "mcq_passed_screen": ["interview", "upload"],
+        "mcq_failed_screen": ["upload"],
+        "interview": ["final_evaluation", "upload"],
+        "final_evaluation": ["upload"]
+    }
+    if current_stage == target_stage:
+        return True
+    allowed = valid_transitions.get(current_stage, [])
+    return target_stage in allowed or target_stage == "upload"
+
 # Set page configurations
 st.set_page_config(
+
     page_title="AgentFlow Recruitment",
     page_icon="💼",
     layout="wide",
@@ -1070,7 +1089,9 @@ def render_stepper(current_stage):
         "upload": 1,
         "screening_passed": 2,
         "screening_failed": 2,
+        "screening_review": 2,
         "proctoring_instruction": 3,
+
         "mcq": 3,
         "mcq_passed_screen": 3,
         "mcq_failed_screen": 3,
@@ -1247,8 +1268,213 @@ Rules for your responses:
             trigger_chatbot_query(user_input.strip())
 
 
+def render_recruiter_analytics():
+    candidates = load_candidates()
+    if not candidates:
+        st.info("No candidate data available to render analytics.")
+        return
+        
+    import pandas as pd
+    import plotly.express as px
+    import plotly.graph_objects as go
+    from collections import Counter
+    
+    st.write("### 📈 Interactive Recruiter Analytics Dashboard")
+    
+    # 1. Pipeline Funnel Data
+    stages_counts = Counter()
+    for c in candidates:
+        stage = c.get("stage", "upload")
+        phase = "Profile Upload"
+        if stage in ["screening_passed", "proctoring_instruction"]:
+            phase = "Cleared Screening"
+        elif stage == "screening_failed":
+            phase = "Screening Failed"
+        elif stage == "screening_review":
+            phase = "Screening Review"
+        elif stage in ["mcq", "mcq_passed_screen"]:
+            phase = "Technical MCQ"
+        elif stage == "mcq_failed_screen":
+            phase = "MCQ Failed"
+        elif stage == "interview":
+            phase = "AI Interview"
+        elif stage == "final_evaluation":
+            eval_selected = c.get("eval_selected", False) or (c.get("selection") == "Selected")
+            phase = "Selected" if eval_selected else "Interview Failed"
+        stages_counts[phase] += 1
+        
+    funnel_order = [
+        "Profile Upload",
+        "Screening Review",
+        "Screening Failed",
+        "Cleared Screening",
+        "Technical MCQ",
+        "MCQ Failed",
+        "AI Interview",
+        "Interview Failed",
+        "Selected"
+    ]
+    funnel_data = []
+    for phase in funnel_order:
+        if phase in stages_counts:
+            funnel_data.append({"Pipeline Phase": phase, "Candidates Count": stages_counts[phase]})
+            
+    df_funnel = pd.DataFrame(funnel_data)
+    
+    # 2. Proctoring Risk Distribution
+    risk_counts = Counter()
+    for c in candidates:
+        risk = "Low Risk"
+        switches = c.get("tab_switches", 0)
+        report = c.get("proctoring_report")
+        if report and isinstance(report, dict) and report.get("risk_level"):
+            risk = report.get("risk_level")
+        else:
+            if switches == 0:
+                risk = "Low"
+            elif 1 <= switches <= 2:
+                risk = "Medium"
+            elif switches == 3:
+                risk = "High"
+            else:
+                risk = "Suspicious"
+        if risk == "Low":
+            risk = "Low Risk"
+        elif risk == "Medium":
+            risk = "Medium Risk"
+        elif risk == "High":
+            risk = "High Risk"
+        elif risk == "Suspicious":
+            risk = "Suspicious / Auto-Submitted"
+        risk_counts[risk] += 1
+        
+    df_risk = pd.DataFrame([{"Risk Level": k, "Count": v} for k, v in risk_counts.items()])
+    
+    # 3. Missing Skills / Skill Gaps
+    skills_counter = Counter()
+    for c in candidates:
+        missing = c.get("missing_skills", [])
+        for s in missing:
+            if s:
+                skills_counter[s] += 1
+                
+    top_gaps = skills_counter.most_common(10)
+    df_gaps = pd.DataFrame([{"Skill": k, "Candidates Lacking": v} for k, v in top_gaps])
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if not df_funnel.empty:
+            fig_funnel = px.funnel(df_funnel, x="Candidates Count", y="Pipeline Phase", color="Pipeline Phase",
+                                   color_discrete_sequence=px.colors.qualitative.Pastel)
+            fig_funnel.update_layout(
+                title="Candidate Pipeline Funnel",
+                margin=dict(l=20, r=20, t=40, b=20),
+                height=350,
+                showlegend=False,
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='white' if st.session_state.get("theme_mode") == "Cyberpunk Dark" else 'black')
+            )
+            st.plotly_chart(fig_funnel, use_container_width=True)
+        else:
+            st.info("No pipeline data yet.")
+            
+    with col2:
+        if not df_risk.empty:
+            fig_risk = px.pie(df_risk, values="Count", names="Risk Level", hole=0.4,
+                              color_discrete_sequence=["#10b981", "#f59e0b", "#ef4444", "#7f1d1d"])
+            fig_risk.update_layout(
+                title="Proctoring Risk Level Distribution",
+                margin=dict(l=20, r=20, t=40, b=20),
+                height=350,
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='white' if st.session_state.get("theme_mode") == "Cyberpunk Dark" else 'black')
+            )
+            st.plotly_chart(fig_risk, use_container_width=True)
+        else:
+            st.info("No proctoring risk data yet.")
+            
+    if not df_gaps.empty:
+        fig_gaps = px.bar(df_gaps, x="Candidates Lacking", y="Skill", orientation='h', color="Candidates Lacking",
+                          color_continuous_scale="Reds")
+        fig_gaps.update_layout(
+            title="Top 10 Technical Skill Gaps Heatmap",
+            margin=dict(l=20, r=20, t=40, b=20),
+            height=300,
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white' if st.session_state.get("theme_mode") == "Cyberpunk Dark" else 'black')
+        )
+        st.plotly_chart(fig_gaps, use_container_width=True)
+    else:
+        st.info("No skill gaps recorded yet.")
+
+def render_screening_review_queue(review_candidates):
+    if not review_candidates:
+        st.success("🎉 No candidates currently pending screening review! All clear.")
+    else:
+        st.markdown("The following candidates scored in the borderline range (45%–65%) during screening and require manual approval.")
+        for idx, c in enumerate(review_candidates):
+            with st.container(border=True):
+                col_c1, col_c2 = st.columns([3, 1])
+                with col_c1:
+                    st.markdown(f"#### 👤 {c.get('name')} ({c.get('email')})")
+                    st.markdown(f"**Applied Position**: {c.get('job_role')} | **Experience**: {c.get('experience')}")
+                    st.markdown(f"**Match Score**: `{c.get('match_score')}%`")
+                    st.markdown(f"**AI Screening Reason**: {c.get('screening_reason')}")
+                    if c.get("missing_skills"):
+                        st.markdown(f"**Missing Skills**: {', '.join(c.get('missing_skills'))}")
+                    if c.get("red_flags"):
+                        st.markdown(f"**Red Flags**: {', '.join(c.get('red_flags'))}")
+                with col_c2:
+                    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+                    if st.button("✓ Approve & Pass", key=f"approve_screen_{idx}_{c['email']}_{c['job_role']}", use_container_width=True):
+                        records = load_candidates()
+                        for r in records:
+                            if r.get("email", "").strip().lower() == c["email"].strip().lower() and r.get("job_role", "").strip().lower() == c["job_role"].strip().lower():
+                                r["stage"] = "proctoring_instruction"
+                                r["status"] = "Cleared Screening"
+                                break
+                        with open(CANDIDATES_FILE, "w") as f:
+                            json.dump(records, f, indent=2)
+                        st.success(f"Approved {c['name']}!")
+                        time.sleep(0.5)
+                        st.rerun()
+                        
+                    if st.button("✗ Reject", key=f"reject_screen_{idx}_{c['email']}_{c['job_role']}", use_container_width=True):
+                        records = load_candidates()
+                        for r in records:
+                            if r.get("email", "").strip().lower() == c["email"].strip().lower() and r.get("job_role", "").strip().lower() == c["job_role"].strip().lower():
+                                r["stage"] = "screening_failed"
+                                r["status"] = "Disqualified in Screening"
+                                break
+                        with open(CANDIDATES_FILE, "w") as f:
+                            json.dump(records, f, indent=2)
+                        st.info(f"Rejected {c['name']}.")
+                        time.sleep(0.5)
+                        st.rerun()
+
 @st.fragment
 def render_candidate_hub():
+    candidates = load_candidates()
+    if not candidates:
+        st.info("No candidates have started or completed the test yet.")
+        return
+        
+    review_candidates = [c for c in candidates if c.get("stage") == "screening_review"]
+    
+    tab_leaderboard, tab_review_queue = st.tabs(["🏆 Leaderboard & Scorecards", f"👥 Screening Review Queue ({len(review_candidates)})"])
+    
+    with tab_leaderboard:
+        render_candidate_hub_leaderboard()
+        
+    with tab_review_queue:
+        render_screening_review_queue(review_candidates)
+
+def render_candidate_hub_leaderboard():
+
     # Load candidates inside the fragment so updates will auto-reload
     candidates = load_candidates()
     if not candidates:
@@ -1877,7 +2103,20 @@ def render_interview_stage():
                                 st.error(f"Voice transcription failed: {str(e)}")
 
         if user_response_text:
-            st.session_state.chat_history.append({"role": "user", "content": user_response_text})
+            # Apply PII redaction first
+            sanitized_response = InterviewAgent.sanitize_text(user_response_text)
+            
+            # Check toxicity and prompt injection
+            interview_agent = InterviewAgent()
+            is_valid, warning_msg = interview_agent.validate_input(sanitized_response)
+            
+            if not is_valid:
+                st.session_state.chat_history.append({"role": "user", "content": sanitized_response})
+                st.session_state.chat_history.append({"role": "assistant", "content": warning_msg})
+                log_candidate_state()
+                st.rerun()
+                
+            st.session_state.chat_history.append({"role": "user", "content": sanitized_response})
             
             with st.spinner("Interviewer is reviewing your answer..."):
                 try:
@@ -1889,9 +2128,10 @@ def render_interview_stage():
                             
                     repeat_agent = RepeatAgent()
                     clarification = repeat_agent.run(
-                        candidate_message=user_response_text,
+                        candidate_message=sanitized_response,
                         last_question=last_assistant_msg
                     )
+
                     
                     if clarification.is_clarification_request:
                         st.session_state.chat_history.append({
@@ -2004,11 +2244,14 @@ def render_job_management_tab():
     col_left, col_right = st.columns([1.2, 1])
 
     with col_left:
+        active_jobs = {k: v for k, v in jobs.items() if not (isinstance(v, dict) and v.get("is_draft", False))}
+        draft_jobs = {k: v for k, v in jobs.items() if isinstance(v, dict) and v.get("is_draft", False)}
+        
         st.write("### 💼 Current Active Roles")
-        if jobs:
+        if active_jobs:
             # Show active jobs in a clean, vertical grid
             cols = st.columns(2)
-            for idx, (title, data) in enumerate(jobs.items()):
+            for idx, (title, data) in enumerate(active_jobs.items()):
                 col = cols[idx % 2]
                 desc = data.get("description", data) if isinstance(data, dict) else data
                 diff = data.get("difficulty", "Medium") if isinstance(data, dict) else "Medium"
@@ -2037,6 +2280,41 @@ def render_job_management_tab():
                     st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
         else:
             st.info("No active jobs currently listed.")
+            
+        st.markdown("---")
+        st.write("### 📝 Pending JD Drafts Queue")
+        if draft_jobs:
+            for title, data in draft_jobs.items():
+                with st.container(border=True):
+                    st.markdown(f"#### 📝 {title} (Draft)")
+                    desc = data.get("description", "")
+                    diff = data.get("difficulty", "Medium")
+                    
+                    edited_desc = st.text_area("Job Description", value=desc, height=150, key=f"edit_draft_desc_{title}")
+                    edited_diff = st.selectbox("Difficulty Level", ["Very Easy", "Easy", "Medium", "Hard"], index=["Very Easy", "Easy", "Medium", "Hard"].index(diff), key=f"edit_draft_diff_{title}")
+                    
+                    col_btn1, col_btn2 = st.columns(2)
+                    with col_btn1:
+                        if st.button("Approve & Publish", key=f"approve_job_{title}", use_container_width=True):
+                            jobs[title] = {
+                                "description": edited_desc,
+                                "difficulty": edited_diff,
+                                "is_draft": False
+                            }
+                            save_jobs(jobs)
+                            st.success(f"Published {title}!")
+                            time.sleep(0.5)
+                            st.rerun()
+                    with col_btn2:
+                        if st.button("Delete Draft", key=f"delete_draft_job_{title}", use_container_width=True):
+                            del jobs[title]
+                            save_jobs(jobs)
+                            st.info(f"Deleted draft for {title}.")
+                            time.sleep(0.5)
+                            st.rerun()
+        else:
+            st.info("No pending job description drafts.")
+
 
     with col_right:
         st.write("### 🤖 AI Job Management Assistant")
@@ -2125,7 +2403,8 @@ def render_job_management_tab():
                         else:
                             jobs[job_title] = {
                                 "description": result.job_description,
-                                "difficulty": result.difficulty
+                                "difficulty": result.difficulty,
+                                "is_draft": True
                             }
                             save_jobs(jobs)
                     elif action_taken == "update":
@@ -2136,9 +2415,11 @@ def render_job_management_tab():
                         else:
                             jobs[job_title] = {
                                 "description": result.job_description,
-                                "difficulty": result.difficulty
+                                "difficulty": result.difficulty,
+                                "is_draft": True
                             }
                             save_jobs(jobs)
+
                     elif action_taken == "delete":
                         if job_title not in jobs:
                             explanation = f"⚠️ The job role '{job_title}' does not exist, so I couldn't delete it."
@@ -2695,11 +2976,14 @@ PREDEFINED_JDS = {}
 JOB_DIFFICULTIES = {}
 for role, data in jobs_db.items():
     if isinstance(data, dict):
+        if data.get("is_draft", False):
+            continue
         PREDEFINED_JDS[role] = data.get("description", "")
         JOB_DIFFICULTIES[role] = data.get("difficulty", "Medium")
     else:
         PREDEFINED_JDS[role] = data
         JOB_DIFFICULTIES[role] = "Medium"
+
 
 PREDEFINED_JDS["Custom / Write your own"] = ""
 JOB_DIFFICULTIES["Custom / Write your own"] = "Medium"
@@ -2833,10 +3117,25 @@ if st.session_state.get("run_auto_apply_for_role"):
             st.session_state.job_role = role_to_apply
             st.session_state.job_description = jd_text
             st.session_state.screening_result = res
-            if res.qualified:
-                st.session_state.stage = "proctoring_instruction"
+            
+            # Borderline screening evaluation
+            match_score = res.match_score
+            if 45 <= match_score <= 65:
+                target_stage = "screening_review"
+                res.qualified = False
+            elif match_score > 65:
+                target_stage = "proctoring_instruction"
+                res.qualified = True
             else:
-                st.session_state.stage = "screening_failed"
+                target_stage = "screening_failed"
+                res.qualified = False
+                
+            current_stage = st.session_state.get("stage", "upload")
+            if validate_stage_transition(current_stage, target_stage):
+                st.session_state.stage = target_stage
+            else:
+                st.session_state.stage = target_stage
+
             
             st.session_state.mcqs = []
             st.session_state.mcq_answers = {}
@@ -3064,7 +3363,10 @@ elif page == "🔒 Recruiter Portal":
     with portal_tab2:
         st.subheader("Recruiter Analytics & Leaderboard")
         st.info("💡 **Candidate Testing Hint**: To evaluate candidate-side features (MCQs, Interview, Proctoring) without signing up or uploading resumes, use these pre-screened tester credentials in the Candidate Assessment tab:\n*   **Email Address**: `admin@test.com`\n*   **Password**: `admin`")
+        render_recruiter_analytics()
+        st.markdown("---")
         render_candidate_hub()
+
                         
     with portal_tab3:
         st.subheader("⚠️ Support Requests & AI Diagnoses")
@@ -3072,10 +3374,13 @@ elif page == "🔒 Recruiter Portal":
         
         # Split tickets
         pending_tickets = [t for t in tickets if not t.get("resolved", False)]
-        auto_resolved_tickets = [t for t in tickets if t.get("resolved", False) and t.get("resolved_by") == "AI Auto-Resolver"]
+        auto_resolved_tickets = [t for t in tickets if t.get("resolved", False) and t.get("resolved_by", "").startswith("AI Auto-Resolver")]
+        
+        pending_audits = [t for t in auto_resolved_tickets if t.get("audit_status", "Pending Audit") == "Pending Audit"]
+        audited_history = [t for t in auto_resolved_tickets if t.get("audit_status", "Pending Audit") in ["Approved", "Revoked"]]
         
         # Sub-tabs for support center
-        support_sub1, support_sub2 = st.tabs(["📥 Pending Recruiter Review", "🤖 AI Auto-Resolved History"])
+        support_sub1, support_sub2, support_sub3 = st.tabs(["📥 Pending Recruiter Review", "🔍 AI Auto-Reset Audits", "🤖 AI Auto-Resolved History"])
         
         with support_sub1:
             if not pending_tickets:
@@ -3143,30 +3448,89 @@ elif page == "🔒 Recruiter Portal":
                     st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
                     
         with support_sub2:
-            if not auto_resolved_tickets:
-                st.info("No tickets have been auto-resolved by the AI Support Agent yet.")
+            if not pending_audits:
+                st.success("🎉 No pending AI auto-reset audits! Good job.")
             else:
-                for idx, t in enumerate(auto_resolved_tickets):
+                st.markdown("Please audit the following support resets automatically granted by the AI support agent.")
+                for idx, t in enumerate(pending_audits):
                     st.markdown(f"""
-                    <div class="glass-card" style="border-left: 6px solid #10b981; padding: 20px; margin-bottom: 15px;">
+                    <div class="glass-card" style="border-left: 6px solid #f59e0b; padding: 20px; margin-bottom: 15px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                             <h4 style="margin: 0; color: var(--text-main);">{t.get('name')} ({t.get('email')})</h4>
-                            <span style="background-color: rgba(16, 185, 129, 0.1); color: #10b981; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Auto-Resolved</span>
+                            <span style="background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Pending Audit</span>
                         </div>
                         <div style="font-size: 0.95rem; margin-bottom: 12px; color: var(--text-sub); line-height: 1.5;">
                             <strong>Applied Role:</strong> {t.get('job_role')}<br>
                             <strong>Date Resolved:</strong> {t.get('timestamp')}<br>
                             <strong>Issue Reported:</strong> <em>"{t.get('message')}"</em>
                         </div>
-                        <div style="background-color: rgba(16, 185, 129, 0.05); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
-                            <strong style="color: #10b981; font-size: 0.95rem;">\U0001F916 AI Justification & Action:</strong><br>
+                        <div style="background-color: rgba(245, 158, 11, 0.05); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                            <strong style="color: #d97706; font-size: 0.95rem;">🤖 AI Justification & Action:</strong><br>
                             <strong>AI Diagnosis:</strong> {t.get('diagnosis')}<br>
-                            <strong>AI Action Notification:</strong> {t.get('candidate_notification')}<br>
                             <strong>Justification:</strong> <em>{t.get('justification')}</em>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
+                    
+                    col_aud1, col_aud2 = st.columns(2)
+                    with col_aud1:
+                        if st.button("Confirm AI Action", key=f"confirm_audit_{idx}_{t.get('email')}_{t.get('job_role')}", use_container_width=True):
+                            # Mark audited as Approved
+                            for tk in tickets:
+                                if tk.get("email", "").strip().lower() == t.get("email", "").strip().lower() and tk.get("job_role", "").strip().lower() == t.get("job_role", "").strip().lower() and tk.get("resolved", False):
+                                    tk["audit_status"] = "Approved"
+                                    tk["resolved_by"] = "AI Auto-Resolver (Confirmed by Recruiter)"
+                                    break
+                            save_issues(tickets)
+                            st.success(f"Confirmed AI action for {t.get('name')}!")
+                            time.sleep(0.5)
+                            st.rerun()
+                    with col_aud2:
+                        if st.button("Revoke AI Action", key=f"revoke_audit_{idx}_{t.get('email')}_{t.get('job_role')}", use_container_width=True):
+                            # Mark audited as Revoked
+                            for tk in tickets:
+                                if tk.get("email", "").strip().lower() == t.get("email", "").strip().lower() and tk.get("job_role", "").strip().lower() == t.get("job_role", "").strip().lower() and tk.get("resolved", False):
+                                    tk["audit_status"] = "Revoked"
+                                    tk["resolved_by"] = "AI Auto-Resolver (Revoked by Recruiter)"
+                                    break
+                            save_issues(tickets)
+                            
+                            # Update candidate record to disallow retake
+                            records = load_candidates()
+                            for r in records:
+                                if r.get("email", "").strip().lower() == t.get("email", "").strip().lower() and r.get("job_role", "").strip().lower() == t.get("job_role", "").strip().lower():
+                                    r["allowed_retake"] = False
+                                    r["status"] = "Disqualified (Reset Revoked)"
+                                    break
+                            with open(CANDIDATES_FILE, "w") as f:
+                                json.dump(records, f, indent=2)
+                                
+                            st.warning(f"Revoked AI reset action for {t.get('name')}!")
+                            time.sleep(0.5)
+                            st.rerun()
+                            
+        with support_sub3:
+            if not audited_history:
+                st.info("No audited auto-resolved history yet.")
+            else:
+                for idx, t in enumerate(audited_history):
+                    audit_color = "#10b981" if t.get("audit_status") == "Approved" else "#ef4444"
+                    st.markdown(f"""
+                    <div class="glass-card" style="border-left: 6px solid {audit_color}; padding: 20px; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="margin: 0; color: var(--text-main);">{t.get('name')} ({t.get('email')})</h4>
+                            <span style="background-color: {audit_color}1a; color: {audit_color}; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">{t.get('audit_status')}</span>
+                        </div>
+                        <div style="font-size: 0.95rem; margin-bottom: 12px; color: var(--text-sub); line-height: 1.5;">
+                            <strong>Applied Role:</strong> {t.get('job_role')}<br>
+                            <strong>Date Resolved:</strong> {t.get('timestamp')}<br>
+                            <strong>Audited Action:</strong> {t.get('resolved_by')}<br>
+                            <strong>AI Justification:</strong> <em>{t.get('justification')}</em>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
         st.stop()
+
 
 # Hydrate Streamlit session state from JSON record on candidate login
 def load_candidate_session(email, job_role=None):
@@ -3205,14 +3569,16 @@ def load_candidate_session(email, job_role=None):
         # Load screening result
         if matched.get("screening_reason"):
             from src.models.schemas import ScreeningResult
+            is_qualified = matched.get("stage") not in ["screening_failed", "screening_review"]
             st.session_state.screening_result = ScreeningResult(
-                qualified=True,
+                qualified=is_qualified,
                 reason=matched.get("screening_reason", ""),
                 match_score=matched.get("match_score", 0),
                 matched_skills=matched.get("matched_skills", []),
                 missing_skills=matched.get("missing_skills", []),
                 red_flags=matched.get("red_flags", [])
             )
+
             
         # Load MCQs
         from src.models.schemas import MCQItem
@@ -3392,10 +3758,24 @@ def render_candidate_auth_portal():
                                 )
                                 st.session_state.screening_result = res
                                 
-                                if res.qualified:
-                                    st.session_state.stage = "proctoring_instruction"
+                                # Borderline screening evaluation
+                                match_score = res.match_score
+                                if 45 <= match_score <= 65:
+                                    target_stage = "screening_review"
+                                    res.qualified = False
+                                elif match_score > 65:
+                                    target_stage = "proctoring_instruction"
+                                    res.qualified = True
                                 else:
-                                    st.session_state.stage = "screening_failed"
+                                    target_stage = "screening_failed"
+                                    res.qualified = False
+                                    
+                                current_stage = st.session_state.get("stage", "upload")
+                                if validate_stage_transition(current_stage, target_stage):
+                                    st.session_state.stage = target_stage
+                                else:
+                                    st.session_state.stage = target_stage
+
                                 
                                 st.session_state.candidate_logged_in = True
                                 st.session_state.candidate_user_email = candidate_email
@@ -3546,7 +3926,7 @@ def render_candidate_hub_portal():
                         with st.spinner("Sending confirmation email..."):
                             try:
                                 email_agent = EmailAgent()
-                                email_agent.run(
+                                sent_ok = email_agent.run(
                                     recipient_email=st.session_state.candidate_email,
                                     candidate_name=st.session_state.candidate_name,
                                     job_role=st.session_state.job_role,
@@ -3554,9 +3934,15 @@ def render_candidate_hub_portal():
                                     is_selected=True
                                 )
                                 st.session_state.email_sent = True
-                            except:
+                                if sent_ok:
+                                    st.success(f"✅ Congratulations email sent to {st.session_state.candidate_email}")
+                                else:
+                                    st.warning("⚠️ Could not send confirmation email — SMTP credentials may be missing or incorrect.")
+                            except Exception as _email_err:
                                 st.session_state.email_sent = True
-                                
+                                st.warning(f"⚠️ Email delivery failed: {str(_email_err)}")
+                                print(f"[EmailAgent] Delivery exception: {_email_err}")
+
                 st.info("📅 **Next Steps**: You will receive a communication email or call shortly from our talent acquisition team with further instructions.")
             else:
                 st.markdown('<h3 style="color: #ef4444;">Selection Status: NOT SELECTED</h3>', unsafe_allow_html=True)
@@ -3573,7 +3959,7 @@ def render_candidate_hub_portal():
                             with st.spinner("Sending update email..."):
                                 try:
                                     email_agent = EmailAgent()
-                                    email_agent.run(
+                                    sent_ok = email_agent.run(
                                         recipient_email=st.session_state.candidate_email,
                                         candidate_name=st.session_state.candidate_name,
                                         job_role=st.session_state.job_role,
@@ -3581,9 +3967,28 @@ def render_candidate_hub_portal():
                                         is_selected=False
                                     )
                                     st.session_state.email_sent = True
-                                except:
+                                    if sent_ok:
+                                        st.info(f"📧 Outcome email sent to {st.session_state.candidate_email}")
+                                    else:
+                                        st.warning("⚠️ Could not send outcome email — SMTP credentials may be missing or incorrect.")
+                                except Exception as _email_err:
                                     st.session_state.email_sent = True
-                    
+                                    st.warning(f"⚠️ Email delivery failed: {str(_email_err)}")
+                                    print(f"[EmailAgent] Delivery exception: {_email_err}")
+
+        elif stage == "screening_review":
+            st.markdown(f"""
+            <div class="glass-card" style="border-left: 5px solid #f59e0b;">
+                <div class="stage-title" style="border-left: none; padding-left: 0; color: #d97706;">Screening Status: Under Review</div>
+                <div style="color: #d97706; font-weight: 600; margin-bottom: 12px; font-size: 1.1rem;">Your application is under manual review by our recruitment team.</div>
+                <p style="color: var(--text-sub); margin-bottom: 12px;">Based on your match score of <strong>{st.session_state.screening_result.match_score if st.session_state.screening_result else "N/A"}%</strong>, your profile has been flagged as borderline. A recruiter will manually evaluate your resume shortly.</p>
+                <div style="font-weight: 600; margin-bottom: 6px; color: var(--text-main);">Screening Analysis:</div>
+                <div style="background-color: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 15px; font-size: 0.95rem; color: var(--text-main); line-height: 1.5;">
+                    {st.session_state.screening_result.reason if st.session_state.screening_result else "No details available."}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
         elif stage == "screening_failed":
             st.markdown(f"""
             <div class="glass-card" style="border-left: 5px solid #ef4444;">
@@ -3595,6 +4000,7 @@ def render_candidate_hub_portal():
                 </div>
             </div>
             """, unsafe_allow_html=True)
+
             
     with tab_results:
         st.write("### Application Results & Performance Analysis")
@@ -3813,8 +4219,10 @@ def render_candidate_hub_portal():
                                     "justification": getattr(diagnosis_res, "justification", ""),
                                     "confidence_score": getattr(diagnosis_res, "confidence_score", 0.0),
                                     "resolution_log": f"Auto-approved reset. Justification: {getattr(diagnosis_res, 'justification', '')}" if is_auto_resolved else "",
-                                    "candidate_notification": cand_notif
+                                    "candidate_notification": cand_notif,
+                                    "audit_status": "Pending Audit" if is_auto_resolved else "N/A"
                                 }
+
                                 
                                 if is_auto_resolved:
                                     records = load_candidates()
