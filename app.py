@@ -1132,7 +1132,6 @@ def format_chat_text(text):
 
 # ----------------- STREAMLIT FRAGMENTS FOR UI/UX ENHANCEMENTS -----------------
 
-@st.fragment
 def classify_intent(user_msg: str, config) -> str:
     """Routes user message to one of 5 intents using a fast LLM call."""
     from langchain_google_genai import ChatGoogleGenerativeAI
